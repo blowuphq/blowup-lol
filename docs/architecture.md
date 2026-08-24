@@ -19,7 +19,16 @@
 
 ## 1. Directory / module architecture
 
-Next.js 15 App Router, TypeScript, feature-first modules. Three route groups = three shells.
+Next.js **16.3.2** App Router (amended from "Next.js 15" pre-Phase-3 approval — TypeScript 7, this repo's standard, requires Next ≥16.2.11), TypeScript 7, feature-first modules. Three route groups = three shells.
+
+> **Bundler note (2026-08-24):** the webpack pipeline is PINNED via `--webpack` in
+> package.json scripts, with `resolve.extensionAlias = {'.js': ['.ts','.tsx','.js']}`
+> in `next.config.mjs`. Turbopack (Next 16's default) cannot resolve NodeNext-style
+> `.js`-suffixed imports into our `.ts` sources; webpack can. Config ships as
+> `next.config.mjs` because Next 15-era TS-config loading also broke under TS7.
+> Verified compatible with planned phases: Inngest (`inngest/next` serve handler,
+> SDK ≥4.2.2) and SSE (Route Handler + `ReadableStream`, `force-dynamic`,
+> `X-Accel-Buffering: no`).
 
 ```
 src/
@@ -398,6 +407,7 @@ Nothing from this backlog enters V1 without explicit approval.
 3. Recap emails moved from plain "deferred" to tracked V1.1 Backlog item B1 with retention rationale.
 4. Status promoted DRAFT → APPROVED; open questions converted to Decisions Record.
 5. Bid ceiling added pre-Phase-1: single bids capped at $10,000 (`CHECK (amount_cents BETWEEN 500 AND 1000000)` + server-side validation).
+6. Stack amendment (2026-08-24, owner-directed, pre-Phase-3 approval): "Next.js 15" → **Next.js 16.3.2** (TypeScript 7 compatibility) and **webpack pipeline pinned instead of Turbopack** (NodeNext `.js` import resolution). Inngest (Phase 3.5) and SSE (Phase 4) verified compatible with the amended stack; see §1 bundler note.
 
 ## Approval log
 
@@ -412,3 +422,4 @@ Nothing from this backlog enters V1 without explicit approval.
 | 7. Failure scenarios | APPROVED as proposed | 2026-08-24 |
 | 8. Security boundaries | APPROVED as proposed | 2026-08-24 |
 | 9. Transactional vs eventual | APPROVED as proposed | 2026-08-24 |
+| Stack amendment (§1): Next.js 16.3.2 + webpack pinned | Owner-requested update; Phase 3 approval pending | 2026-08-24 |
