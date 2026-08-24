@@ -273,6 +273,10 @@ Canonical path is §3 Phase A step 7 → Phase B. Specifics:
 - **Out-of-order/duplicates:** handlers are transition-based, not command-based. Second `pending→succeeded` attempt is a no-op acked 200.
 - **Refunds** (`charge.refunded`): `succeeded→refunded`, total/score/rank re-derived in the same txn pattern.
 - **Failures** (`payment_intent.payment_failed`): `pending→failed`; no rank effect.
+  *(Superseded by Phase 3 decision #4, same as the sweep note below: no Bid row
+  exists at checkout time, so a failed-payment event has nothing to transition —
+  the webhook correctly answers "ignored." Kept as harmless documentation of the
+  trigger's whitelisted transitions; owner decision 2026-08-24.)*
   *(As implemented in Phase 3, no Bid row exists at checkout time at all — pending
   bids only occur mid-settlement-transaction — so there is nothing for an
   abandoned-checkout sweep to do. Superseded by Phase 3 decision #4: abandoned
