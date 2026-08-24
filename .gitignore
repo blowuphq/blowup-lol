@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
+
+# secrets
+.env
+.env*.local
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# per-machine Claude Code settings (not shared)
+.claude/settings.local.json
