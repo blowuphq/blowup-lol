@@ -273,7 +273,11 @@ Canonical path is §3 Phase A step 7 → Phase B. Specifics:
 - **Out-of-order/duplicates:** handlers are transition-based, not command-based. Second `pending→succeeded` attempt is a no-op acked 200.
 - **Refunds** (`charge.refunded`): `succeeded→refunded`, total/score/rank re-derived in the same txn pattern.
 - **Failures** (`payment_intent.payment_failed`): `pending→failed`; no rank effect.
-- **Abandoned checkouts:** daily Inngest sweep marks pendings >24h old as `failed`.
+  *(As implemented in Phase 3, no Bid row exists at checkout time at all — pending
+  bids only occur mid-settlement-transaction — so there is nothing for an
+  abandoned-checkout sweep to do. Superseded by Phase 3 decision #4: abandoned
+  Checkout Sessions are Stripe's lifecycle to expire, not ours; the former daily
+  Inngest sweep line was removed by owner decision 2026-08-24.)*
 - **Season-boundary race:** webhook lands after season ended → auto-refund via Stripe API + activity note (Q4).
 - Webhook route bypasses body parsing so the raw body reaches the verifier.
 
