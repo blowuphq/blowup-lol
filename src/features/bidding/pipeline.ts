@@ -20,7 +20,7 @@ import { CUSTOM_BID } from '../../config/site.js';
  *  - Redis failures never fail the money path (safeZadd logs; reconciler heals).
  */
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Either the root drizzle client or an open transaction (nested = savepoint). */
 type Exec = typeof db | Tx;
@@ -56,10 +56,19 @@ export function assertBidAmount(amountCents: number): void {
   }
 }
 
-/** Get-or-create creator; fake channel id is stable per handle (YouTube lookup is out of scope). */
-async function getOrCreateCreator(
+/**
+ * Deterministic anonymous channel id for the no-OAuth V1 flow (architecture Q1):
+ * until the YouTube API exists (out of scope), a verified checkout's handle
+ * mints a stable UCANON_ id instead of a real UC… channel id.
+ */
+export function anonChannelId(handle: string): string {
+  return `UCANON_${handle.replace(/^@/, '').replace(/[^A-Za-z0-9_-]/g, '').toUpperCase()}`;
+}
+
+/** Get-or-create creator; the caller supplies the channel id (fake vs real flow). */
+export async function getOrCreateCreator(
   tx: Tx,
-  input: { handle: string; name?: string; categoryId: number },
+  input: { youtubeChannelId: string; handle: string; name?: string; categoryId: number },
 ) {
   const existing = await tx.select().from(creators).where(eq(creators.handle, input.handle));
   if (existing[0]) return existing[0];
@@ -67,7 +76,7 @@ async function getOrCreateCreator(
   await tx
     .insert(creators)
     .values({
-      youtubeChannelId: `UCFAKE_${input.handle.replace(/^@/, '').toUpperCase()}`,
+      youtubeChannelId: input.youtubeChannelId,
       handle: input.handle,
       name: input.name ?? input.handle,
       categoryId: input.categoryId,
@@ -78,7 +87,7 @@ async function getOrCreateCreator(
   return created;
 }
 
-async function getOrCreateCampaign(
+export async function getOrCreateCampaign(
   tx: Tx,
   input: { creatorId: string; seasonId: string },
 ) {
@@ -101,12 +110,24 @@ async function getOrCreateCampaign(
  * -> activity inside one locked Postgres transaction. Returns everything the
  * caller needs for post-commit projection writes.
  */
+export interface RealPayment {
+  checkoutSessionId: string;
+  paymentIntentId: string;
+  /**
+   * Real webhook flow: insert the bid as 'pending', then flip it through the
+   * trigger-whitelisted pending→succeeded transition (which stamps
+   * status_updated_at). Fake bids omit this and are born succeeded.
+   */
+  bornPending?: boolean;
+}
+
 export async function settlePaidBid(
   input: {
     seasonId: string;
     creatorId: string;
     campaignId: string;
     amountCents: number;
+    payment?: RealPayment;
   },
   exec: Exec = db,
 ): Promise<SettleResult> {
@@ -127,8 +148,9 @@ export async function settlePaidBid(
     const previousRank = campaign.rank ?? null;
 
     // APPEND-ONLY insert. Fake bids are born 'succeeded' (they simulate a
-    // verified webhook); real flow flips pending->succeeded via the trigger-
-    // whitelisted transition instead.
+    // verified webhook); real webhook settlement passes `payment` with real
+    // Stripe ids and bornPending — the bid exists briefly as pending, then the
+    // trigger-whitelisted transition flips it before totals are summed.
     const [bid] = await tx
       .insert(bids)
       .values({
@@ -136,11 +158,19 @@ export async function settlePaidBid(
         campaignId: input.campaignId,
         seasonId: input.seasonId,
         amountCents: input.amountCents,
-        stripeCheckoutSessionId: `cs_fake_${randomUUID()}`,
-        stripePaymentIntentId: `pi_fake_${randomUUID()}`,
-        paymentStatus: 'succeeded',
+        stripeCheckoutSessionId:
+          input.payment?.checkoutSessionId ?? `cs_fake_${randomUUID()}`,
+        stripePaymentIntentId: input.payment?.paymentIntentId ?? `pi_fake_${randomUUID()}`,
+        paymentStatus: input.payment?.bornPending ? 'pending' : 'succeeded',
       })
       .returning();
+
+    if (input.payment?.bornPending) {
+      await tx
+        .update(bids)
+        .set({ paymentStatus: 'succeeded' })
+        .where(eq(bids.id, bid.id));
+    }
 
     // Total is DERIVED from summed Bid rows — never += (F1 / product rule).
     const totalRes = await tx.execute(
@@ -224,6 +254,7 @@ export async function recordFakeBid(input: FakeBidInput): Promise<SettleResult &
 
   const result = await db.transaction(async (tx) => {
     const creator = await getOrCreateCreator(tx, {
+      youtubeChannelId: `UCFAKE_${input.handle.replace(/^@/, '').toUpperCase()}`,
       handle: input.handle,
       name: input.name,
       categoryId: category.id,
