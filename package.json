@@ -8,10 +8,14 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
-    "test": "vitest run"
+    "dev:fake-bid": "tsx scripts/dev-fake-bid.ts",
+    "dev:leaderboard": "tsx scripts/dev-leaderboard.ts",
+    "test": "vitest run",
+    "dev:activity": "tsx scripts/dev-activity.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.0"
   },
   "devDependencies": {
