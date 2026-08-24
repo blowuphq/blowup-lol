@@ -32,6 +32,11 @@ that creator/season. Nothing auto-repairs it today.
 `verifyLeaderboard` on a cadence and repairing drift; until then `npm run
 dev:leaderboard -- <slug>` detects it manually (exit 1 on mismatch).
 
+> **Disposition (2026-08-24, owner decision):** promoted from "planned mitigation"
+> to its own **Phase 3.5** — Inngest `verifyLeaderboard` reconciler, scheduled +
+> on-demand — sequenced AFTER Phase 3 (Stripe/webhooks) and BEFORE Phase 4 (SSE),
+> enforcing this section's gate.
+
 ### R2 — `safeZadd` fails open by design
 Redis write failures retry twice, then log and swallow — deliberately, because Redis
 must never block or roll back Postgres truth. Consequence: silent drift is possible
@@ -48,6 +53,10 @@ read. Low probability, self-heals as soon as scores diverge, but real.
 **Proposed fix (Phase 3):** fold the tiebreak into the ZSET score itself
 (`score - epsilon*firstBidOrdinal`) or serve display order from PG with Redis only
 as the hot cache of scores.
+
+> **Disposition (2026-08-24, owner decision):** adopt the fold-the-tiebreak-into-
+> the-score fix so Redis ordering is self-sufficient without a PG fallback.
+> Scheduled for **Phase 3.5** alongside the reconciler — explicitly OUT of Phase 3 scope.
 
 ### R4 — Season-wide advisory lock is a throughput ceiling
 The lock serializes all writes per season. Correct, but caps a season at one bid

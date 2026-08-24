@@ -8,6 +8,8 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 | 1 — Database foundation | ✅ | `7b0a4f1` | `v0.1-phase1` | DB schema, migrations, seed (Tech/Gaming/Education), append-only trigger; schema tests 20/20 |
 | 2 — Ranking pipeline | ✅ | `3d51128` | `v0.2-phase2` | Fake-bid ranking pipeline: Bid → SUM-derived totals → 85/15 score → rank recompute → activity rows → Redis projection; verifier proves PG↔Redis agreement; tests 29/29; report in `docs/phase2-report.md`, race risks in `docs/phase2-race-risks.md` |
 | 3 — Stripe payments | 🔄 | — | — | Checkout + verified webhook settlement replacing fake-bid payment ids |
+| 3.5 — Projection reconciler | ⏳ | — | — | Inngest `verifyLeaderboard` (scheduled + on-demand); fold score tiebreak into ZSET score — R2/R3 dispositions in `docs/phase2-race-risks.md` |
+| 4 — Realtime (SSE) | ⏳ | — | — | Live rank updates; **gated on 3.5** (no SSE before the reconciler exists) |
 
 ## Notes
 
