@@ -360,6 +360,7 @@ Slugs (not uuid ids) keep keys human-greppable across environments; slugs are im
 - **Amount integrity:** tier ids or custom amount only from client; server resolves dollars from `config/site.ts`; custom validated server-side to ≥ $5 and ≤ $10,000 per single bid (sanity cap). Event `amount_received` cross-checked.
 - **Click anti-bot inflation:** (a) HMAC-signed outbound tokens `{creatorId, ts}` — forged/expired (>10 min) rejected; (b) `session_hash = HMAC(ip‖ua‖dailySalt)`, no raw IP persisted; (c) hard dedupe: one counted click per session per campaign per 24h, PG-enforced (Redis fast path only); (d) bot UAs dropped; (e) Cloudflare bot-fight + ASN rules; (f) weekly anomaly job flags outlier click-rate z-scores → human review, no auto-penalty in V1. Residual risk bounded: engagement ≤15% of score, so inflation can't buy a rank money wouldn't buy cheaper.
 - **General:** zod at every boundary; secrets env-only (`env.ts` fails boot loudly); Sentry PII scrubbing; PostHog without emails/IPs; admin/refund ops are maintainer-flag CLI scripts, not UI, in V1; CSP headers everywhere.
+- **Dependency posture (2026-08-24 audit):** no high/critical findings. Accepted: esbuild GHSA-67mh-4wv8-2f99, dev-only via drizzle-kit CLI, revisit when drizzle-kit drops the @esbuild-kit chain.
 
 ---
 
