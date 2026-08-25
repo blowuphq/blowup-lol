@@ -36,6 +36,15 @@ dev:leaderboard -- <slug>` detects it manually (exit 1 on mismatch).
 > to its own **Phase 3.5** — Inngest `verifyLeaderboard` reconciler, scheduled +
 > on-demand — sequenced AFTER Phase 3 (Stripe/webhooks) and BEFORE Phase 4 (SSE),
 > enforcing this section's gate.
+>
+> **RESOLVED in Phase 3.5:** `leaderboardReconcile` ships as an Inngest cron
+> (`*/5 * * * *`, `src/inngest/functions/leaderboardReconcile.ts`) plus an
+> on-demand trigger independent of any scheduler (`npm run dev:reconcile
+> -- <slug>`). Diffs each active season's FULL ZSET against a pure-PG
+> recomputation and repairs via targeted ZADD/ZREM; repair success is
+> verified by re-read inside the same run. Demonstrated live: three-way
+> corruption (missing member / drifted score / stale ghost) repaired in one
+> run. See `src/features/leaderboard/reconcile.ts`.
 
 ### R2 — `safeZadd` fails open by design
 Redis write failures retry twice, then log and swallow — deliberately, because Redis
@@ -43,6 +52,9 @@ must never block or roll back Postgres truth. Consequence: silent drift is possi
 until R1's reconciler exists. Acceptable while truth remains authoritative in PG;
 becomes unacceptable the moment SSE reads Redis live without a reconciliation loop.
 **Gate:** do not ship Phase 4 (SSE) before the reconciler.
+
+> **RESOLVED in Phase 3.5:** the reconciler bounds fail-open drift to ≤5 minutes
+> (one schedule interval). The Phase 4 gate above is now satisfied.
 
 ### R3 — Exact-score ties order differently in Redis vs Postgres
 PG tie-breaks equal scores by first succeeded bid time, then campaign id. Redis ZSETs
@@ -57,6 +69,18 @@ as the hot cache of scores.
 > **Disposition (2026-08-24, owner decision):** adopt the fold-the-tiebreak-into-
 > the-score fix so Redis ordering is self-sufficient without a PG fallback.
 > Scheduled for **Phase 3.5** alongside the reconciler — explicitly OUT of Phase 3 scope.
+>
+> **RESOLVED in Phase 3.5:** `toZsetScore(score, firstBidOrdinal)` in
+> `src/lib/rank-formula.ts` projects `score − 1e-11 · firstBidOrdinal` into the
+> ZSET from BOTH write sites (fake-bid pipeline and webhook settlement). The
+> ordinal is ROW_NUMBER over the season's `(first succeeded bid ASC NULLS LAST,
+> id ASC)` ordering — exactly the PG tiebreak keys, and stable for existing
+> campaigns because append-only bids only ever join at the end. ε=1e-11 keeps
+> the whole adjustment ≤ 1e-5 at a million campaigns (distinct numeric(14,4)
+> scores differ by ≥ 1e-4) while staying far above float64 ulp at score
+> magnitude ~10 (~1.8e-15); raw timestamps were rejected as ordinals (µs spreads
+> would need ε ≈ 1e-16, below that ulp). Verified by tests: tied creators order
+> identically in PG ORDER BY and ZREVRANGE regardless of UUID lexical luck.
 
 ### R4 — Season-wide advisory lock is a throughput ceiling
 The lock serializes all writes per season. Correct, but caps a season at one bid
