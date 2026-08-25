@@ -19,6 +19,21 @@ export interface RedisClient {
   zrange(key: string, start: number, stop: number, ...extra: string[]): Promise<string[]>;
   /** With 'WITHSCORES' returns flat [member, score, ...] strings, highest score first. */
   zrevrange(key: string, start: number, stop: number, ...extra: string[]): Promise<string[]>;
+  /**
+   * Streams (Phase 4 SSE hub). Variadic forms mirror ioredis exactly —
+   * argument assembly lives in src/lib/sse.ts, which is the only consumer:
+   *   xadd(key, 'MAXLEN', '~', 500, '*', field1, value1, …) -> new entry id
+   *   xread('BLOCK', ms, 'STREAMS', key, id)                 -> [[key, [[id, [f, v, …]], …]]] | null
+   */
+  xadd(key: string, ...args: (string | number)[]): Promise<string | null>;
+  xrange(key: string, ...args: (string | number)[]): Promise<unknown[]>;
+  /** With ('+','-','COUNT',1) returns just the newest entry. */
+  xrevrange(...args: (string | number)[]): Promise<unknown[]>;
+  xread(...args: (string | number)[]): Promise<unknown[] | null>;
+  /** Visitor counter + connect-cap primitives (architecture §6/§8). */
+  incr(key: string): Promise<number>;
+  decr(key: string): Promise<number>;
+  expire(key: string, seconds: number): Promise<number>;
   ping(): Promise<string>;
   quit(): Promise<'OK'>;
   disconnect(): void;
