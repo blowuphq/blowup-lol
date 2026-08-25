@@ -13,12 +13,15 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 
 ## Notes
 
-- **Running tests since Phase 3.5 (2026-08-25):** `.env` holds PRODUCTION DSNs,
-  and every integration suite truncates the database it points at. A vitest
-  guard (`tests/global-setup.ts`) now aborts unless both URLs are local; run
-  the suite with shell-exported local DSNs, e.g.
-  `$env:DATABASE_URL='postgres://postgres:postgres@localhost:5432/blowup'; $env:REDIS_URL='redis://localhost:6379'; npm test`.
-  The same caution applies to `scripts/dev-*` CLIs — they read `.env` directly.
+- **Running tests & dev-* CLIs since Phase 3.5 (2026-08-25):** `.env` holds
+  PRODUCTION DSNs, integration suites truncate the database they point at,
+  and the dev-* CLIs write real bids/repairs. A shared guard
+  (`src/lib/env-guard.ts`) aborts ALL of these unless both URLs are local —
+  wired into `tests/global-setup.ts` and as the first statement of every
+  `scripts/dev-*` CLI. Run any of them with shell-exported local DSNs, e.g.
+  `$env:DATABASE_URL='postgres://postgres:postgres@localhost:5432/blowup'; $env:REDIS_URL='redis://localhost:6379'; npm test`
+  (or `npm run dev:fake-bid -- …`). Guard behavior is unit-pinned in
+  `tests/env-guard.test.ts`.
 - Phase 1's original commit was amended to fold in `docs/phase1-deviations.md`,
   so its pre-amend hash (1466402) no longer exists; `7b0a4f1` is the real,
   reviewed checkpoint.
