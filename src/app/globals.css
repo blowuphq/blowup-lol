@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/*
+ * Blowup theme tokens (Tailwind v4 CSS-first config).
+ * Hot accent + display font surface as normal utilities (bg-hot, font-sans…).
+ */
+@theme {
+  --color-hot: #ff4017;
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}
