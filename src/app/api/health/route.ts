@@ -24,7 +24,12 @@ export async function GET(): Promise<Response> {
       db: { connected: true, categories: row?.categories ?? 0 },
     });
   } catch (err) {
-    console.error('[health] database check failed:', err instanceof Error ? err.message : err);
+    // Drizzle wraps driver errors — the actionable cause (e.g. `relation …
+    // does not exist`, auth/TLS failures) sits one level down in err.cause.
+    const message = err instanceof Error ? err.message : String(err);
+    const cause =
+      err instanceof Error && err.cause instanceof Error ? err.cause.message : undefined;
+    console.error('[health] database check failed:', message, cause ? `(cause: ${cause})` : '');
     return Response.json(
       { status: 'degraded', db: { connected: false } },
       { status: 503 },
