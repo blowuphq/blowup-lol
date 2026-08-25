@@ -310,7 +310,7 @@ Profile stats post-reset derive from `season_results` — survive resets forever
 
 | Key | Type | TTL | Writer | Reader |
 |---|---|---|---|---|
-| `blowup:lb:{slug}:s{seasonId}` | ZSET (member=creatorId, score=score) | 35d | webhook post-commit, reconciler | board SSR |
+| `blowup:lb:{slug}:s{seasonId}` | ZSET (member=creatorId, score=tiebreak-adjusted score, R3) | 35d | webhook post-commit, reconciler | board SSR |
 | `blowup:season:{slug}` | STRING (active seasonId) | none | rollover, app-boot fallback | all board paths |
 | `blowup:visitors:{slug}` | STRING counter | 60s heartbeat | SSE hub | header widget |
 | `blowup:cd:{campaignId}:{sessionHash}` | STRING "1" | 24h | click endpoint | click endpoint |
@@ -331,15 +331,15 @@ Slugs (not uuid ids) keep keys human-greppable across environments; slugs are im
 
 ### Invalidation model: write-through-after-commit + repair loops (no delete-invalidation)
 
-1. Every scoring txn publishes new score to the ZSET immediately post-commit (§3.B10).
-2. `leaderboardReconcile` (5 min): diffs ZSET top-50 vs PG per active season; fixes drift; beyond-threshold mismatch triggers full `rebuildLeaderboard(seasonId)` (pipeline ZADD from PG).
+1. Every scoring txn publishes new score to the ZSET immediately post-commit (§3.B10). The projected score is tiebreak-adjusted (`score − 1e-11 · firstBidOrdinal`, R3) so ZREVRANGE reproduces PG ordering even on byte-equal scores.
+2. `leaderboardReconcile` (5 min, SHIPPED Phase 3.5): diffs each active season's FULL ZSET vs a pure-PG recomputation and repairs with targeted ZADD/ZREM — no advisory lock, read-only toward Postgres, safe next to settlement. Full-set diff replaces the top-50 sketch (boards are tiny at V1 scale, and stale members must never survive where SSE would broadcast them); targeted repairs replace a separate `rebuildLeaderboard` threshold — a fully wiped key is just N missing members to the same code path. On-demand: `npm run dev:reconcile -- <slug>`.
 3. Board reads circuit-break to PG on Redis miss/error — outage degrades latency, never correctness.
 
 ---
 
 ## 7. Failure scenarios
 
-**7.1 Webhook fires, Redis write fails.** Postgres already committed — money and rank correct and durable. The SSE payload carries ranks computed *inside* the txn, so connected viewers animate correctly even while the ZSET is stale. Heals via ≤5-min reconciler or next successful write-through. Worst case: cold visitor sees ≤5-minute-old board. Money never affected. (ZADD retried ×3; give-up enqueues reconcile.)
+**7.1 Webhook fires, Redis write fails.** Postgres already committed — money and rank correct and durable. The SSE payload carries ranks computed *inside* the txn, so connected viewers animate correctly even while the ZSET is stale. Heals via ≤5-min reconciler or next successful write-through. Worst case: cold visitor sees ≤5-minute-old board. Money never affected. (ZADD retried ×2; reconciler heals within one schedule interval.)
 
 **7.2 Two bids race for the same rank.** Both webhooks enter txns; `pg_advisory_xact_lock(seasonId)` serializes them. The second computes rank *after* the first commits → distinct ranks (e.g., 5 then 6), both activity rows truthful, two SSE hops animated. Score ties break deterministically by earliest leading bid under the lock; documented publicly.
 
@@ -417,6 +417,7 @@ Nothing from this backlog enters V1 without explicit approval.
 4. Status promoted DRAFT → APPROVED; open questions converted to Decisions Record.
 5. Bid ceiling added pre-Phase-1: single bids capped at $10,000 (`CHECK (amount_cents BETWEEN 500 AND 1000000)` + server-side validation).
 6. Stack amendment (2026-08-24, owner-directed, pre-Phase-3 approval): "Next.js 15" → **Next.js 16.3.2** (TypeScript 7 compatibility) and **webpack pipeline pinned instead of Turbopack** (NodeNext `.js` import resolution). Inngest (Phase 3.5) and SSE (Phase 4) verified compatible with the amended stack; see §1 bundler note.
+7. Phase 3.5 delivered (2026-08-25): `leaderboardReconcile` implemented per §6 as an Inngest cron (`*/5 * * * *`, served at `/api/inngest`; production scheduling activates once INNGEST_SIGNING_KEY is configured) plus scheduler-independent on-demand trigger (`npm run dev:reconcile`); R3 tiebreak folded into ZSET scores via `toZsetScore` (§6 invalidation model). After a near-miss where plain `npm test` with production DSNs in `.env` attempted schema-wide TRUNCATE against prod (saved only by DNS failure), a shared safety interlock (`src/lib/env-guard.ts`) now refuses non-local `DATABASE_URL`/`REDIS_URL` in BOTH entry points: vitest's `globalSetup` and every `scripts/dev-*` CLI's first statement. Matching is exact on the parsed hostname against a loopback allowlist (`localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal`) and fails closed; unit-pinned in `tests/env-guard.test.ts`.
 
 ## Approval log
 

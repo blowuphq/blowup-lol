@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { recordFakeBid } from '../src/features/bidding/pipeline.js';
+import { assertLocalEnv } from '../src/lib/env-guard.js';
 import { pool } from '../src/lib/db.js';
 import { redis } from '../src/lib/redis.js';
 
@@ -13,6 +14,7 @@ import { redis } from '../src/lib/redis.js';
  */
 
 async function main(): Promise<void> {
+  assertLocalEnv(); // refuses prod-pointing env before any query (see src/lib/env-guard.ts)
   const [slug, handle, amountArg, name] = process.argv.slice(2);
   if (!slug || !handle) {
     console.error('usage: tsx scripts/dev-fake-bid.ts <categorySlug> <handle> [amountCents] [name]');

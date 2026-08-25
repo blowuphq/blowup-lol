@@ -111,3 +111,20 @@ export async function safeZadd(key: string, score: number, member: string): Prom
   }
   return false;
 }
+
+/**
+ * Reconciler-side removal of a stale ZSET member (no PG counterpart). Same
+ * fail-open contract as safeZadd: retry once, log, never throw — a failed
+ * removal simply reappears as drift on the next reconcile cycle.
+ */
+export async function safeZrem(key: string, member: string): Promise<boolean> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await redis.zrem(key, member);
+      return true;
+    } catch (err) {
+      console.error(`[redis] ZREM failed (attempt ${attempt}/2) key=${key}:`, err);
+    }
+  }
+  return false;
+}

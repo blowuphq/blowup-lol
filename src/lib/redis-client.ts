@@ -14,6 +14,7 @@ export interface RedisClient {
   del(...keys: string[]): Promise<number>;
   keys(pattern: string): Promise<string[]>;
   zadd(key: string, score: number, member: string): Promise<number>;
+  zrem(key: string, member: string): Promise<number>;
   /** With 'WITHSCORES' returns flat [member, score, member, score, ...] strings (ascending). */
   zrange(key: string, start: number, stop: number, ...extra: string[]): Promise<string[]>;
   /** With 'WITHSCORES' returns flat [member, score, ...] strings, highest score first. */

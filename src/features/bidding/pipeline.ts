@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
-import { computeScore } from '../../lib/rank-formula.js';
+import { computeScore, toZsetScore } from '../../lib/rank-formula.js';
 import { getActiveSeason, leaderboardKey, safeZadd } from '../../lib/redis.js';
 import { activities, bids, campaigns, creators } from '../../db/schema.js';
 import { CUSTOM_BID } from '../../config/site.js';
@@ -42,6 +42,13 @@ export interface SettleResult {
   previousRank: number | null;
   newRank: number | null;
   score: number;
+  /**
+   * R3: tiebreak-adjusted projection of `score` for Redis (score − ε·ordinal).
+   * PG keeps the raw score; only the ZSET carries the folded value.
+   */
+  zsetScore: number;
+  /** Position in the season-wide first-succeeded-bid ordering (1-based). */
+  firstBidOrdinal: number;
   bidAmountCents: number;
   bidTotalCents: number;
   activityType: ActivityKind;
@@ -209,11 +216,36 @@ export async function settlePaidBid(
       WHERE cs.id = ranked.id AND cs.rank IS DISTINCT FROM ranked.rn
     `);
 
-    const [after] = await tx
-      .select({ rank: campaigns.rank })
-      .from(campaigns)
-      .where(eq(campaigns.id, input.campaignId));
+    // Read back this campaign's rank plus its firstBidOrdinal — the ROW_NUMBER
+    // over the PG tiebreak keys (first succeeded bid ASC NULLS LAST, id ASC).
+    // The ordinal is what the Redis projection folds into its score (R3); it
+    // is stable for existing campaigns because bids are append-only, so new
+    // campaigns only ever join at the END of the first_bid ordering.
+    const afterRes = await tx.execute(sql`
+      WITH live AS (
+        SELECT c.id,
+               c.rank,
+               ROW_NUMBER() OVER (
+                 ORDER BY fb.first_bid ASC NULLS LAST,
+                          c.id ASC
+               )::int AS ordinal
+        FROM campaigns c
+        LEFT JOIN LATERAL (
+          SELECT MIN(b.created_at) AS first_bid
+          FROM bids b
+          WHERE b.campaign_id = c.id AND b.payment_status = 'succeeded'
+        ) fb ON TRUE
+        WHERE c.season_id = ${input.seasonId} AND c.status = 'live'
+      )
+      SELECT rank, ordinal FROM live WHERE id = ${input.campaignId}
+    `);
+    const after = (afterRes.rows[0] ?? { rank: null, ordinal: 1 }) as {
+      rank: number | null;
+      ordinal: number;
+    };
     const newRank = after.rank ?? null;
+    const firstBidOrdinal = after.ordinal;
+    const zsetScore = toZsetScore(score, firstBidOrdinal);
 
     // Activity row for THIS event only (pushed-down rivals update silently in
     // rank until their own next event — architecture §3.B8 scope).
@@ -237,6 +269,8 @@ export async function settlePaidBid(
       previousRank,
       newRank,
       score,
+      zsetScore,
+      firstBidOrdinal,
       bidAmountCents: input.amountCents,
       bidTotalCents,
       activityType,
@@ -275,7 +309,8 @@ export async function recordFakeBid(input: FakeBidInput): Promise<SettleResult &
   });
 
   // ---- Post-commit: projection only. Failures here never roll back money. ----
-  await safeZadd(leaderboardKey(category.slug, season.id), result.score, result.creatorId);
+  // The ZSET carries the tiebreak-adjusted score (R3) — raw score stays in PG.
+  await safeZadd(leaderboardKey(category.slug, season.id), result.zsetScore, result.creatorId);
 
   return { ...result, slug: category.slug };
 }

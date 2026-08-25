@@ -10,6 +10,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "dev:fake-bid": "tsx scripts/dev-fake-bid.ts",
     "dev:leaderboard": "tsx scripts/dev-leaderboard.ts",
+    "dev:reconcile": "tsx scripts/dev-reconcile.ts",
     "test": "vitest run",
     "dev:activity": "tsx scripts/dev-activity.ts",
     "dev": "next dev --webpack",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
+    "inngest": "^4.18.1",
     "ioredis": "^6.0.0",
     "next": "^16.3.2",
     "pg": "^8.23.0",
