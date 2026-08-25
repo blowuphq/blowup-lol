@@ -1,0 +1,6 @@
+# Never ship local secret files in CLI deployments (gitignore is NOT
+# consulted by the Vercel upload filter — proven by the 2026-08-25 deploy
+# that baked dev secrets into prod). Env config belongs in the project's
+# Vercel env store: `vercel env add <NAME> production`.
+.env
+.env.*
