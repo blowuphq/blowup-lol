@@ -1,13 +1,19 @@
 import { sql } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
+import { toZsetScore } from '../../lib/rank-formula.js';
 import { getActiveSeason, leaderboardKey, redis } from '../../lib/redis.js';
 
 /**
  * Leaderboard reads (architecture §6): Redis is the fast path, Postgres the
  * source of truth. verifyLeaderboard() recomputes the expected ranking
  * independently from PG and compares — this is the Phase 2 proof that the
- * projection agrees with truth.
+ * projection agrees with truth. Since R3, the ZSET carries tiebreak-adjusted
+ * scores (score − ε·firstBidOrdinal), so the expected value is folded the
+ * same way before comparing.
  */
+
+/** Float64 slack for comparing projected vs computed ZSET scores. */
+export const SCORE_TOLERANCE = 1e-9;
 
 export interface RedisBoardEntry {
   creatorId: string;
@@ -23,6 +29,8 @@ export interface PostgresBoardEntry {
   bidTotalCents: string;
   /** Raw from db.execute: drizzle's parser leaves timestamptz as a string. */
   firstBidAt: string | null;
+  /** Position in the season-wide (first_bid ASC NULLS LAST, id) ordering — the R3 fold input. */
+  firstBidOrdinal: number;
 }
 
 export async function getRedisBoard(slug: string): Promise<{
@@ -53,7 +61,10 @@ export async function getPostgresBoard(slug: string): Promise<{
            cr.name,
            c.score::text           AS score,
            c.bid_total_cents::text AS "bidTotalCents",
-           fb.first_bid_at         AS "firstBidAt"
+           fb.first_bid_at         AS "firstBidAt",
+           ROW_NUMBER() OVER (
+             ORDER BY fb.first_bid_at ASC NULLS LAST, c.id ASC
+           )::int                  AS "firstBidOrdinal"
     FROM campaigns c
     JOIN creators cr ON cr.id = c.creator_id
     LEFT JOIN LATERAL (
@@ -108,12 +119,15 @@ export async function verifyLeaderboard(slug: string): Promise<VerificationResul
     }
   }
 
-  // Scores must agree within float-print precision of numeric(14,4).
+  // Scores must agree within float-print precision of numeric(14,4) — compared
+  // against the tiebreak-adjusted expectation (R3), since the ZSET no longer
+  // stores raw scores.
   for (let i = 0; i < Math.min(pgBoard.entries.length, redisBoard.entries.length); i++) {
-    const pgScore = Number(pgBoard.entries[i].score);
-    if (Math.abs(pgScore - redisBoard.entries[i].score) > 1e-9) {
+    const pgEntry = pgBoard.entries[i];
+    const expected = toZsetScore(Number(pgEntry.score), pgEntry.firstBidOrdinal);
+    if (Math.abs(expected - redisBoard.entries[i].score) > SCORE_TOLERANCE) {
       reasons.push(
-        `score drift at position ${i + 1}: redis=${redisBoard.entries[i].score} pg=${pgScore}`,
+        `score drift at position ${i + 1}: redis=${redisBoard.entries[i].score} pg(raw)=${pgEntry.score}`,
       );
       break;
     }

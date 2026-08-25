@@ -279,9 +279,10 @@ async function settleSession(
   }
 
   // ---- Post-commit: projection only. Failures here never roll back money. ----
+  // The ZSET carries the tiebreak-adjusted score (R3) — raw score stays in PG.
   await safeZadd(
     leaderboardKey(settled.slug, settled.result.seasonId),
-    settled.result.score,
+    settled.result.zsetScore,
     settled.result.creatorId,
   );
   return { kind: 'settled', slug: settled.slug, result: settled.result };
