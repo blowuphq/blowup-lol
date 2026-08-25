@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { reconcileAllActive, reconcileSeason } from '../src/features/leaderboard/reconcile.js';
+import { assertLocalEnv } from '../src/lib/env-guard.js';
 import { pool } from '../src/lib/db.js';
 import { redis } from '../src/lib/redis.js';
 
@@ -15,6 +16,7 @@ import { redis } from '../src/lib/redis.js';
  */
 
 async function main(): Promise<void> {
+  assertLocalEnv(); // refuses prod-pointing env before any query (see src/lib/env-guard.ts)
   const slug = process.argv[2];
   const reports = slug ? [await reconcileSeason(slug)] : await reconcileAllActive();
 

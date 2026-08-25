@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { sql } from 'drizzle-orm';
-import { db } from '../src/lib/db.js';
-import { pool } from '../src/lib/db.js';
+import { db, pool } from '../src/lib/db.js';
+import { assertLocalEnv } from '../src/lib/env-guard.js';
 import { redis } from '../src/lib/redis.js';
 
 /**
@@ -12,6 +12,7 @@ import { redis } from '../src/lib/redis.js';
  */
 
 async function main(): Promise<void> {
+  assertLocalEnv(); // refuses prod-pointing env before any query (see src/lib/env-guard.ts)
   const slug = process.argv[2];
   if (!slug) {
     console.error('usage: tsx scripts/dev-activity.ts <categorySlug>');
