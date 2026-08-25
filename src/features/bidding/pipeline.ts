@@ -5,6 +5,7 @@ import { computeScore, toZsetScore } from '../../lib/rank-formula.js';
 import { getActiveSeason, leaderboardKey, safeZadd } from '../../lib/redis.js';
 import { activities, bids, campaigns, creators } from '../../db/schema.js';
 import { CUSTOM_BID } from '../../config/site.js';
+import { publishSettlement } from '../leaderboard/events.js';
 
 /**
  * The ranking pipeline (architecture §3), driven end-to-end in Phase 2 by a
@@ -311,6 +312,8 @@ export async function recordFakeBid(input: FakeBidInput): Promise<SettleResult &
   // ---- Post-commit: projection only. Failures here never roll back money. ----
   // The ZSET carries the tiebreak-adjusted score (R3) — raw score stays in PG.
   await safeZadd(leaderboardKey(category.slug, season.id), result.zsetScore, result.creatorId);
+  // SSE fan-out (§3.B10) — same publish path the real webhook uses.
+  await publishSettlement(category.slug, result);
 
   return { ...result, slug: category.slug };
 }

@@ -29,6 +29,13 @@ export default function Home() {
           A live discovery marketplace for YouTube creators. Bid for placement,
           compete for attention, blow up your channel.
         </p>
+        <a
+          href="/categories"
+          className="group inline-flex items-center gap-2 rounded-full border border-hot/40 bg-hot/10 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-hot transition-colors hover:bg-hot/20"
+        >
+          Watch the live boards
+          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+        </a>
       </section>
 
       <footer className="relative z-10 pb-8 text-center text-xs uppercase tracking-widest text-zinc-600">

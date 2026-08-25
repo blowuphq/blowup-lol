@@ -8,3 +8,29 @@
   --color-hot: #ff4017;
   --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 }
+
+/*
+ * Rank-move flash: overlay on a leaderboard row whose position just changed.
+ * Remounted (keyed) per event by LeaderboardScreen so the animation replays
+ * on every move, not just the first.
+ */
+@keyframes flashout {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.flash-overlay {
+  background: linear-gradient(90deg, rgba(255, 64, 23, 0.3), rgba(255, 64, 23, 0.04));
+  animation: flashout 1.4s ease-out forwards;
+}
+
+/* Reduced motion: rows still reorder instantly, just without the slide/flash. */
+@media (prefers-reduced-motion: reduce) {
+  .flash-overlay {
+    animation-duration: 0.01s;
+    animation-delay: 2s;
+  }
+}

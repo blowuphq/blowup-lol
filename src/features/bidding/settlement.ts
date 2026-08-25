@@ -12,6 +12,7 @@ import {
   type SettleResult,
   type Tx,
 } from './pipeline.js';
+import { publishSettlement } from '../leaderboard/events.js';
 
 /**
  * Verified-webhook settlement (architecture §4) — the ONLY path that turns
@@ -285,6 +286,8 @@ async function settleSession(
     settled.result.zsetScore,
     settled.result.creatorId,
   );
+  // SSE fan-out (§3.B10) — the exact same publish path fake bids take.
+  await publishSettlement(settled.slug, settled.result);
   return { kind: 'settled', slug: settled.slug, result: settled.result };
 }
 
