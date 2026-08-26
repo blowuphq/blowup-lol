@@ -2,12 +2,17 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardRow, BoardSnapshot } from '../../../features/leaderboard/board.js';
 import type { RankDeltaPayload } from '../../../lib/sse.js';
 import { LeaderboardRow, Avatar } from '../../../components/shared/LeaderboardRow.js';
 import { VisitorCount } from '../../../components/shared/VisitorCount.js';
 import { ScoreFormula } from '../../../components/shared/ScoreFormula.js';
+import {
+  CategoryChips,
+  type CategoryChipData,
+} from '../../../components/shared/CategoryChips.js';
+import { BoardFaq } from '../../../components/shared/BoardFaq.js';
 
 /**
  * The live board (architecture §3 Phase C): SSR renders current truth, an
@@ -66,13 +71,26 @@ const fmtEnd = (iso: string) =>
     timeZone: 'UTC',
   });
 
-export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot }) {
+export default function LeaderboardScreen({
+  initial,
+  chips,
+}: {
+  initial: BoardSnapshot;
+  chips?: CategoryChipData[];
+}) {
   const [rows, setRows] = useState<BoardRow[]>(initial.rows);
   const [visitors, setVisitors] = useState<number | null>(null);
   const [live, setLive] = useState(false);
   const [flash, setFlash] = useState<Record<string, number>>({});
   const seqRef = useRef(0);
   const slug = initial.slug;
+
+  // Proof-of-life total: rows carry ABSOLUTE bid totals, so this recomputes
+  // correctly as deltas land — no extra subscription, no lib changes.
+  const totalRaisedCents = useMemo(
+    () => rows.reduce((sum, r) => sum + r.bidTotalCents, 0),
+    [rows],
+  );
 
   useEffect(() => {
     const es = new EventSource(`/api/events?category=${encodeURIComponent(slug)}`);
@@ -129,7 +147,6 @@ export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot 
             BLOWUP<span className="text-hot">.</span>
           </Link>
           <div className="flex items-center gap-2">
-            <VisitorCount count={visitors} />
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-widest ${
                 live
@@ -145,6 +162,13 @@ export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot 
           </div>
         </header>
 
+        {/* Category chips — one-tap board switching with per-category totals */}
+        {chips && chips.length > 0 && (
+          <div className="mt-5">
+            <CategoryChips chips={chips} activeSlug={slug} />
+          </div>
+        )}
+
         {/* Title */}
         <section className="mt-10">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-hot">
@@ -153,7 +177,20 @@ export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot 
           <h1 className="mt-1 text-[clamp(2.75rem,8vw,5rem)] font-bold uppercase leading-none tracking-tighter">
             {initial.categoryName}
           </h1>
-          <p className="mt-2 text-sm text-zinc-500">Round ends {fmtEnd(initial.seasonEndsAt)} · UTC</p>
+          {/* Proof-of-life line (Phase 4.5, item 3): one compact row — live
+              viewers, season total, round end. Total updates as deltas land. */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-zinc-500">
+            <VisitorCount count={visitors} />
+            <span aria-hidden>·</span>
+            <span>
+              <span className="font-bold tabular-nums text-zinc-200">
+                ${(totalRaisedCents / 100).toLocaleString('en-US')}
+              </span>{' '}
+              raised this season
+            </span>
+            <span aria-hidden>·</span>
+            <span>Round ends {fmtEnd(initial.seasonEndsAt)} · UTC</span>
+          </div>
           {initial.source === 'postgres' && (
             <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-300">
               Live projection unreachable — showing Postgres truth; updates may be delayed.
@@ -173,7 +210,12 @@ export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot 
           )}
           <AnimatePresence initial={false}>
             {rows.map((row) => (
-              <LeaderboardRow key={row.creatorId} row={row} flashSeq={flash[row.creatorId]} />
+              <LeaderboardRow
+                key={row.creatorId}
+                row={row}
+                slug={slug}
+                flashSeq={flash[row.creatorId]}
+              />
             ))}
           </AnimatePresence>
         </section>
@@ -202,6 +244,9 @@ export default function LeaderboardScreen({ initial }: { initial: BoardSnapshot 
             <ScoreFormula leader={leader} />
           </div>
         </div>
+
+        {/* Plain-English FAQ — supplements the formula panel, collapsed by default */}
+        <BoardFaq />
 
         <footer className="mt-12 flex items-center justify-between text-xs uppercase tracking-widest text-zinc-600">
           <Link href="/categories" className="transition-colors hover:text-hot">

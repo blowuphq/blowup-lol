@@ -4,6 +4,7 @@ import { db } from '../../../lib/db.js';
 import { categories } from '../../../db/schema.js';
 import { loadBoard } from '../../../features/leaderboard/board.js';
 import { Avatar } from '../../../components/shared/LeaderboardRow.js';
+import { CategoryChips } from '../../../components/shared/CategoryChips.js';
 
 /**
  * Category index (architecture §1 (marketing)/categories/page.tsx): every
@@ -18,6 +19,11 @@ export const metadata = { title: 'Categories — Blowup' };
 export default async function CategoriesPage() {
   const cats = await db.select().from(categories).where(eq(categories.active, true));
   const boards = await Promise.all(cats.map((c) => loadBoard(c.slug)));
+  const chips = cats.map((c, i) => ({
+    slug: c.slug,
+    name: c.name,
+    totalCents: boards[i].rows.reduce((sum, r) => sum + r.bidTotalCents, 0),
+  }));
 
   return (
     <main className="relative min-h-dvh overflow-x-clip bg-zinc-950 text-zinc-100 selection:bg-hot selection:text-white">
@@ -47,6 +53,10 @@ export default async function CategoriesPage() {
           <p className="mt-2 text-sm text-zinc-500">
             Weekly seasons. One board per category. Highest score wins the spotlight.
           </p>
+          {/* Chip scan (Phase 4.5, item 5): activity level per category at a glance */}
+          <div className="mt-5">
+            <CategoryChips chips={chips} />
+          </div>
         </section>
 
         <section className="mt-8 grid gap-3">
@@ -73,7 +83,15 @@ export default async function CategoriesPage() {
                         month: 'short',
                         day: 'numeric',
                         timeZone: 'UTC',
-                      })}
+                      })}{' '}
+                      ·{' '}
+                      <span className="tabular-nums text-zinc-400">
+                        $
+                        {(
+                          boards[i].rows.reduce((sum, r) => sum + r.bidTotalCents, 0) / 100
+                        ).toLocaleString('en-US')}{' '}
+                        raised
+                      </span>
                     </p>
                   </div>
 
