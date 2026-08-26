@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { BoardRow } from '../../features/leaderboard/board.js';
 import { BoostPicker, BoostTrigger } from './BidButton.js';
+import { Avatar } from './Avatar.js';
+
+// Re-exported so existing importers (categories index, root page) keep their
+// import path; new server components should import './Avatar.js' directly to
+// stay outside this module's framer-motion client boundary.
+export { Avatar };
 
 /**
  * One rank row (architecture §1 components/shared/LeaderboardRow). The
@@ -17,33 +23,6 @@ import { BoostPicker, BoostTrigger } from './BidButton.js';
  * #4 still animates smoothly instead of jumping between containers.
  * Every row carries an inline Boost CTA into the existing checkout flow.
  */
-
-/** Deterministic avatar gradient — no YouTube API dependency for V1 boards. */
-const GRADIENTS = [
-  'from-[#ff4017] to-[#ffb03a]',
-  'from-[#8b5cf6] to-[#ec4899]',
-  'from-[#06b6d4] to-[#3b82f6]',
-  'from-[#10b981] to-[#84cc16]',
-  'from-[#f43f5e] to-[#f97316]',
-];
-
-function gradientFor(handle: string): string {
-  let h = 0;
-  for (let i = 0; i < handle.length; i++) h = (h * 31 + handle.charCodeAt(i)) >>> 0;
-  return GRADIENTS[h % GRADIENTS.length];
-}
-
-export function Avatar({ handle, size = 'md' }: { handle: string; size?: 'md' | 'lg' }) {
-  const dim = size === 'lg' ? 'h-14 w-14 text-xl' : 'h-11 w-11 text-base';
-  return (
-    <div
-      aria-hidden
-      className={`${dim} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradientFor(handle)} font-bold text-white shadow-lg shadow-black/40`}
-    >
-      {(handle.replace(/^@/, '') || '?')[0].toUpperCase()}
-    </div>
-  );
-}
 
 function DeltaBadge({ row }: { row: BoardRow }) {
   if (row.dayDelta === null) {
