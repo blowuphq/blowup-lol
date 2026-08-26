@@ -11,6 +11,7 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 | 3.5 — Projection reconciler | ✅ | `a6008b6` (branch `phase-3-5-projection-reconciler`) | pending owner tag `v0.3.5-phase3.5` | `leaderboardReconcile`: Inngest cron every 5 min (`/api/inngest`) + on-demand `npm run dev:reconcile`; full ZSET↔PG diff, targeted ZADD/ZREM repair verified in-run. R3: tiebreak folded into ZSET scores (`score − 1e-11·firstBidOrdinal`). R1/R2/R3 dispositions resolved in `docs/phase2-race-risks.md`; tests 57/57 incl. new `tests/zset-tiebreak.test.ts`, `tests/reconcile.test.ts`; test suites now refuse non-local DATABASE_URL/REDIS_URL |
 | 4 — Realtime (SSE) | ✅ | branch `phase-4-live-leaderboard` (unmerged; stacked on the 3.5 line — merge 3.5 first) | pending owner PR/merge/tag | Public live boards: `/[category]` + `/categories` index. SSE hub over Redis Streams (`lib/sse.ts`) with Last-Event-ID replay, per-connection blocking readers, concrete cursors; `rank_delta` published post-commit by BOTH settlement paths; visitor counter (§6); PG circuit-break banner (§7.6); formula panel runs the scorer's own modules live (transparency invariant); Framer Motion rank animation; tests 68/68 incl. `tests/live-board.test.ts`; DoD demonstrated live: two-tab fan-out <600 ms, reconnect catch-up via Last-Event-ID, 24-bid burst @26 bids/s zero drops/desync, counter incr/decr/clamp, Redis↔PG parity MATCH incl. two real $-ties broken by firstBid order |
 | 4.5 — Board UX refinements | 🔄 | branch `phase-4-5-board-ui-refinements` (stacked on 4) | — | Components-and-styling only (no SSE/settlement/schema/scoring changes): inline "Boost" CTA on every row opening the existing `/api/checkout` flow with tier picker from `BID_TIERS_CENTS`; podium treatment for ranks 1–3 (same layout parent, animations preserved); proof-of-life line (viewers + season total + round end); plain-English FAQ beside the formula panel; category chips with season totals on board + index. Screenshot-verified vs Phase-4 baseline; suite 68/68 ✓; two-tab SSE re-check delivers deltas + converging totals on both tabs but exposed a pre-existing Phase-4 client merge gap (see notes) — reported, awaiting owner ruling |
+| 4.6 — Root landing showcase | 🔄 | branch `phase-4-6-root-showcase` (stacked on 4.5) | — | Root `/` evolved from "coming soon" to live showcase: hero wordmark kept verbatim; server-rendered proof-of-life stats bar (season totals from the same `loadBoard()` sums the index uses; "watching live" from §6 Redis visitor counters across active slugs — snapshot, §9 cosmetic semantics); reigning-#1 preview cards from the same `rows[0]` derivation as `/categories` (parity by construction, verified byte-identical); 3-step how-it-works; "Enter the arena" CTA into `/categories`. Only client JS: dependency-free `CountUp` (~40 lines, SSR emits final values, reduced-motion honored). `Avatar` extracted from LeaderboardRow into its own server-safe module after the prod build showed the import dragging framer-motion (~40 KB gzip) onto `/` — re-exported for compat, board pages unchanged. Prod warm 30–55 ms loopback; mobile 390 px clean; suite 68/68 ×2. Awaiting owner approval |
 
 ## Notes
 
@@ -50,6 +51,19 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   was not running to auto-heal). `npm run dev:reconcile` repaired exactly
   the one drifted entry (`repairs=1/1, healthyAfter=true`) — Phase-3.5
   tooling doing its job on a real drift.
+- Phase 4.6 verification recipe (2026-08-26): the demo board is rebuilt
+  after every suite run with `npm run db:seed` + nine `dev:fake-bid` calls
+  (tech only: gamma 120000¢, alpha 105000¢, beta 50000, delta 40000,
+  epsilon 32000, zeta 24000, eta 17000, theta 10000, iota 6500 → 9
+  creators, $4,045 total; fake bids carry zero clicks so rank order is
+  money-sorted and any split hitting these sums renders identically).
+  Landing-page stats were verified live: settled bid moved the root stats
+  bar $4,020 → $4,045; an SSE connection moved "watching live" 0 → 1 → 0.
+  Windows gotcha learned en route: stopping the `npm run dev` shell task
+  kills only the npm wrapper — the next-server child survives holding
+  :3000; kill the listening PID (netstat) before restarting, or the new
+  server 3001-falls-back / the zombie serves stale `.next` state (500s
+  after a prod build clobbers its cache).
 
 ## Process from Phase 3 onward
 
