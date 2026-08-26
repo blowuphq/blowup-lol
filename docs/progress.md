@@ -10,6 +10,7 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 | 3 — Stripe payments | ✅ | `01828d9` (PR #1 merge) | pending owner tag `v0.3-phase3` | Checkout + verified webhook settlement replacing fake-bid payment ids; merged to main 2026-08-25 |
 | 3.5 — Projection reconciler | ✅ | `a6008b6` (branch `phase-3-5-projection-reconciler`) | pending owner tag `v0.3.5-phase3.5` | `leaderboardReconcile`: Inngest cron every 5 min (`/api/inngest`) + on-demand `npm run dev:reconcile`; full ZSET↔PG diff, targeted ZADD/ZREM repair verified in-run. R3: tiebreak folded into ZSET scores (`score − 1e-11·firstBidOrdinal`). R1/R2/R3 dispositions resolved in `docs/phase2-race-risks.md`; tests 57/57 incl. new `tests/zset-tiebreak.test.ts`, `tests/reconcile.test.ts`; test suites now refuse non-local DATABASE_URL/REDIS_URL |
 | 4 — Realtime (SSE) | ✅ | branch `phase-4-live-leaderboard` (unmerged; stacked on the 3.5 line — merge 3.5 first) | pending owner PR/merge/tag | Public live boards: `/[category]` + `/categories` index. SSE hub over Redis Streams (`lib/sse.ts`) with Last-Event-ID replay, per-connection blocking readers, concrete cursors; `rank_delta` published post-commit by BOTH settlement paths; visitor counter (§6); PG circuit-break banner (§7.6); formula panel runs the scorer's own modules live (transparency invariant); Framer Motion rank animation; tests 68/68 incl. `tests/live-board.test.ts`; DoD demonstrated live: two-tab fan-out <600 ms, reconnect catch-up via Last-Event-ID, 24-bid burst @26 bids/s zero drops/desync, counter incr/decr/clamp, Redis↔PG parity MATCH incl. two real $-ties broken by firstBid order |
+| 4.5 — Board UX refinements | 🔄 | branch `phase-4-5-board-ui-refinements` (stacked on 4) | — | Components-and-styling only (no SSE/settlement/schema/scoring changes): inline "Boost" CTA on every row opening the existing `/api/checkout` flow with tier picker from `BID_TIERS_CENTS`; podium treatment for ranks 1–3 (same layout parent, animations preserved); proof-of-life line (viewers + season total + round end); plain-English FAQ beside the formula panel; category chips with season totals on board + index. Screenshot-verified vs Phase-4 baseline; suite 68/68 ✓; two-tab SSE re-check delivers deltas + converging totals on both tabs but exposed a pre-existing Phase-4 client merge gap (see notes) — reported, awaiting owner ruling |
 
 ## Notes
 
@@ -32,6 +33,23 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   reviewing: `phase-3-5-projection-reconciler` first, then the Phase-4 PR.
 - Phase 4 scope guardrails held: no activity feed UI, no share cards,
   no click tracking, no creator submission form.
+- Phase 4.5 regression finding (2026-08-26): the two-tab SSE re-check caught
+  a PRE-EXISTING Phase-4 client gap, not a 4.5 regression (`applyDelta` in
+  `LeaderboardScreen.tsx` is untouched by the 4.5 diff). A single-entry
+  `rank_delta` carries only the bidder's new rank, so a displaced incumbent
+  keeps its stale `rank` and the client sort ties over to handle-order —
+  the old leader stays visually on top until a reconnect's fresh-fetch
+  resync heals the board. Server truth (PG + ZSET) is correct at all times;
+  totals converge on every tab. Proposed fix, PENDING OWNER APPROVAL:
+  after merging entries, sort by score desc and reassign `rank = index+1`
+  (events carry absolute scores, so single-entry deltas become
+  self-consistent). Owner may prefer it on the unmerged Phase-4 branch.
+- Same window, operational: the dev ZSET was found drifted (@dod-gamma
+  5.1947 in ZSET vs 5.5696 in PG — the 8/25 +$250 settlement's ZADD failed
+  open, most likely during the Redis container restart; local Inngest cron
+  was not running to auto-heal). `npm run dev:reconcile` repaired exactly
+  the one drifted entry (`repairs=1/1, healthyAfter=true`) — Phase-3.5
+  tooling doing its job on a real drift.
 
 ## Process from Phase 3 onward
 
