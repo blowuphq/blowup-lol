@@ -12,6 +12,7 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 | 4 — Realtime (SSE) | ✅ | `91b3904` (PR #3 merge) | `v0.4-phase4` | Public live boards: `/[category]` + `/categories` index. SSE hub over Redis Streams (`lib/sse.ts`) with Last-Event-ID replay, per-connection blocking readers, concrete cursors; `rank_delta` published post-commit by BOTH settlement paths; visitor counter (§6); PG circuit-break banner (§7.6); formula panel runs the scorer's own modules live (transparency invariant); Framer Motion rank animation; tests 68/68 incl. `tests/live-board.test.ts`; DoD demonstrated live: two-tab fan-out <600 ms, reconnect catch-up via Last-Event-ID, 24-bid burst @26 bids/s zero drops/desync, counter incr/decr/clamp, Redis↔PG parity MATCH incl. two real $-ties broken by firstBid order |
 | 4.5 — Board UX refinements | ✅ | `c00482f` (PR #4 merge) | `v0.4.5-phase4.5` | Components-and-styling only (no SSE/settlement/schema/scoring changes): inline "Boost" CTA on every row opening the existing `/api/checkout` flow with tier picker from `BID_TIERS_CENTS`; podium treatment for ranks 1–3 (same layout parent, animations preserved); proof-of-life line (viewers + season total + round end); plain-English FAQ beside the formula panel; category chips with season totals on board + index. Screenshot-verified vs Phase-4 baseline; suite 68/68 ✓; two-tab SSE re-check delivers deltas + converging totals on both tabs |
 | 4.6 — Root landing showcase | ✅ | `b8d5955` (PR #5 merge) | `v0.4.6-phase4.6` | Root `/` evolved from "coming soon" to live showcase: hero wordmark kept verbatim; server-rendered proof-of-life stats bar (season totals from the same `loadBoard()` sums the index uses; "watching live" from §6 Redis visitor counters across active slugs — snapshot, §9 cosmetic semantics); reigning-#1 preview cards from the same `rows[0]` derivation as `/categories` (parity by construction, verified byte-identical); 3-step how-it-works; "Enter the arena" CTA into `/categories`. Only client JS: dependency-free `CountUp` (~40 lines, SSR emits final values, reduced-motion honored). `Avatar` extracted from LeaderboardRow into its own server-safe module after the prod build showed the import dragging framer-motion (~40 KB gzip) onto `/` — re-exported for compat, board pages unchanged. Prod warm 30–55 ms loopback; mobile 390 px clean; suite 68/68 ×2. |
+| 4.7 — Env-guard completion | 🔄 | branch `phase-4-7-env-guard-completion` (off `main` @ `878a556`) | — | Closes the last three paths by which local tooling could reach production Postgres/Redis: `scripts/seed.ts` (no guard at all), `drizzle.config.ts` → `db:push`/`db:migrate`, and `npm run dev`. `assertLocalDsns(dbUrl, redisUrl)` extracted as the pure form of the check with `assertLocalEnv()` reduced to a `process.env` wrapper (allowlist + message text unchanged ⇒ six existing call sites behavior-identical); new `scripts/env-preflight.ts` over pure `scripts/env-cascade.ts` gates `dev` (`--mode=next`) and `db:push`/`db:migrate`/`db:seed` (`--mode=dotenv`), replicating each consumer's real env cascade rather than approximating one; `next build`/`next start` deliberately ungated (Vercel never reads `.env`). All four commands exit 1 in 1–2 ms against prod `.env` and against a `db.invalid` sentinel; all four proceed with local DSNs (`db:seed` → 3/3/0, `/tech` renders 9 rows); a temp `.env.development.local` unblocks `dev` while `.env` holds prod; `npm run build` exits 0 with prod-shaped DSNs; suite 78/78 (+10 cascade cases). PR pending owner review |
 
 ## Notes
 
@@ -24,14 +25,24 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   `$env:DATABASE_URL='postgres://postgres:postgres@localhost:5432/blowup'; $env:REDIS_URL='redis://localhost:6379'; npm test`
   (or `npm run dev:fake-bid -- …`). Guard behavior is unit-pinned in
   `tests/env-guard.test.ts`.
+- **Since Phase 4.7 (2026-08-27) that list is no longer partial.** `npm run
+  dev`, `db:seed`, `db:push` and `db:migrate` are gated too, each behind
+  `scripts/env-preflight.ts` in the mode matching how that command actually
+  resolves env (`--mode=next` replicates Next's
+  `process.env > .env.$(NODE_ENV).local > .env.local > .env.$(NODE_ENV) > .env`
+  ladder; `--mode=dotenv` replicates `dotenv/config`, which reads only `.env`).
+  Same shell-export escape hatch as above, and a local
+  `.env.development.local` also works for `npm run dev` specifically. NOT
+  gated, by design: `npm run build` / `npm start` (Vercel never reads `.env`)
+  and `db:generate` (verified to need no live connection).
 - Phase 1's original commit was amended to fold in `docs/phase1-deviations.md`,
   so its pre-amend hash (1466402) no longer exists; `7b0a4f1` is the real,
   reviewed checkpoint.
 - Phase 2 scope guardrails held: no Stripe, no UI, no YouTube API, no SSE.
-- Phase 4 branch topology: `phase-4-live-leaderboard` is stacked on the
+- Phase 4 branch topology: `phase-4-live-leaderboard` was stacked on the
   phase-3.5 line (it consumes the R3 tiebreak fold and the env-guard from
-  there), not on `main` — 3.5 still awaits owner merge. Merge order when
-  reviewing: `phase-3-5-projection-reconciler` first, then the Phase-4 PR.
+  there), not on `main`. **Resolved 2026-08-27 — both are merged** (PR #2
+  `3f00838`, PR #3 `91b3904`); the merge-order caveat no longer applies.
 - Phase 4 scope guardrails held: no activity feed UI, no share cards,
   no click tracking, no creator submission form.
 - Phase 4.5 regression finding (2026-08-26): the two-tab SSE re-check caught
@@ -41,10 +52,11 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   keeps its stale `rank` and the client sort ties over to handle-order —
   the old leader stays visually on top until a reconnect's fresh-fetch
   resync heals the board. Server truth (PG + ZSET) is correct at all times;
-  totals converge on every tab. Proposed fix, PENDING OWNER APPROVAL:
-  after merging entries, sort by score desc and reassign `rank = index+1`
-  (events carry absolute scores, so single-entry deltas become
-  self-consistent). Owner may prefer it on the unmerged Phase-4 branch.
+  totals converge on every tab. **Approved 2026-08-27 as its own phase:** the
+  fix (sort by score desc, reassign `rank = index+1`, recompute `dayDelta`
+  against the final rank) is specced as **Phase 4.8** in
+  `docs/phase-4.7-4.8-spec.md`, on branch `fix/applydelta-rank-resort` off
+  `main` — not on the Phase-4 branch, which is now merged.
 - Same window, operational: the dev ZSET was found drifted (@dod-gamma
   5.1947 in ZSET vs 5.5696 in PG — the 8/25 +$250 settlement's ZADD failed
   open, most likely during the Redis container restart; local Inngest cron
@@ -64,6 +76,16 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   :3000; kill the listening PID (netstat) before restarting, or the new
   server 3001-falls-back / the zombie serves stale `.next` state (500s
   after a prod build clobbers its cache).
+- Phase 4.7 findings worth keeping (2026-08-27): (a) `next dev` and
+  `dotenv/config` resolve `DATABASE_URL` from **different files**, so one
+  generic "read .env and check it" guard would have been wrong for one of the
+  two consumers — hence the two explicit preflight modes. (b) The local
+  services are containers `blowup-pg` (postgres:16-alpine) and `blowup-redis`
+  (redis:7-alpine) with a restart policy, so they come up on their own once
+  Docker Desktop is started; there is no compose file in the repo. (c) `next
+  build` does touch Redis at build time (ioredis DNS errors surface, non-fatal
+  with an unreachable host) — another reason the build path must not be gated
+  by a local-only allowlist.
 
 ## Process from Phase 3 onward
 
