@@ -3,6 +3,7 @@ import { and, eq, count } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { categories, creators, seasons } from '../src/db/schema.js';
+import { assertLocalEnv } from '../src/lib/env-guard.js';
 
 /**
  * Phase 1 seed (architecture §2): 3 launch categories + one ACTIVE season each.
@@ -19,6 +20,7 @@ const LAUNCH_CATEGORIES = [
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function main(): Promise<void> {
+  assertLocalEnv(); // refuses prod-pointing env before any query (see src/lib/env-guard.ts)
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const db = drizzle(pool);
 
