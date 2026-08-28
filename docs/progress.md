@@ -12,7 +12,8 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
 | 4 — Realtime (SSE) | ✅ | `91b3904` (PR #3 merge) | `v0.4-phase4` | Public live boards: `/[category]` + `/categories` index. SSE hub over Redis Streams (`lib/sse.ts`) with Last-Event-ID replay, per-connection blocking readers, concrete cursors; `rank_delta` published post-commit by BOTH settlement paths; visitor counter (§6); PG circuit-break banner (§7.6); formula panel runs the scorer's own modules live (transparency invariant); Framer Motion rank animation; tests 68/68 incl. `tests/live-board.test.ts`; DoD demonstrated live: two-tab fan-out <600 ms, reconnect catch-up via Last-Event-ID, 24-bid burst @26 bids/s zero drops/desync, counter incr/decr/clamp, Redis↔PG parity MATCH incl. two real $-ties broken by firstBid order |
 | 4.5 — Board UX refinements | ✅ | `c00482f` (PR #4 merge) | `v0.4.5-phase4.5` | Components-and-styling only (no SSE/settlement/schema/scoring changes): inline "Boost" CTA on every row opening the existing `/api/checkout` flow with tier picker from `BID_TIERS_CENTS`; podium treatment for ranks 1–3 (same layout parent, animations preserved); proof-of-life line (viewers + season total + round end); plain-English FAQ beside the formula panel; category chips with season totals on board + index. Screenshot-verified vs Phase-4 baseline; suite 68/68 ✓; two-tab SSE re-check delivers deltas + converging totals on both tabs |
 | 4.6 — Root landing showcase | ✅ | `b8d5955` (PR #5 merge) | `v0.4.6-phase4.6` | Root `/` evolved from "coming soon" to live showcase: hero wordmark kept verbatim; server-rendered proof-of-life stats bar (season totals from the same `loadBoard()` sums the index uses; "watching live" from §6 Redis visitor counters across active slugs — snapshot, §9 cosmetic semantics); reigning-#1 preview cards from the same `rows[0]` derivation as `/categories` (parity by construction, verified byte-identical); 3-step how-it-works; "Enter the arena" CTA into `/categories`. Only client JS: dependency-free `CountUp` (~40 lines, SSR emits final values, reduced-motion honored). `Avatar` extracted from LeaderboardRow into its own server-safe module after the prod build showed the import dragging framer-motion (~40 KB gzip) onto `/` — re-exported for compat, board pages unchanged. Prod warm 30–55 ms loopback; mobile 390 px clean; suite 68/68 ×2. |
-| 4.7 — Env-guard completion | 🔄 | branch `phase-4-7-env-guard-completion` (off `main` @ `878a556`) | — | Closes the last three paths by which local tooling could reach production Postgres/Redis: `scripts/seed.ts` (no guard at all), `drizzle.config.ts` → `db:push`/`db:migrate`, and `npm run dev`. `assertLocalDsns(dbUrl, redisUrl)` extracted as the pure form of the check with `assertLocalEnv()` reduced to a `process.env` wrapper (allowlist + message text unchanged ⇒ six existing call sites behavior-identical); new `scripts/env-preflight.ts` over pure `scripts/env-cascade.ts` gates `dev` (`--mode=next`) and `db:push`/`db:migrate`/`db:seed` (`--mode=dotenv`), replicating each consumer's real env cascade rather than approximating one; `next build`/`next start` deliberately ungated (Vercel never reads `.env`). All four commands exit 1 in 1–2 ms against prod `.env` and against a `db.invalid` sentinel; all four proceed with local DSNs (`db:seed` → 3/3/0, `/tech` renders 9 rows); a temp `.env.development.local` unblocks `dev` while `.env` holds prod; `npm run build` exits 0 with prod-shaped DSNs; suite 78/78 (+10 cascade cases). PR pending owner review |
+| 4.7 — Env-guard completion | ✅ | `0cf4cdc` (PR #7 merge) | `v0.4.7-phase4.7` | Closes the last three paths by which local tooling could reach production Postgres/Redis: `scripts/seed.ts` (no guard at all), `drizzle.config.ts` → `db:push`/`db:migrate`, and `npm run dev`. `assertLocalDsns(dbUrl, redisUrl)` extracted as the pure form of the check with `assertLocalEnv()` reduced to a `process.env` wrapper (allowlist + message text unchanged ⇒ six existing call sites behavior-identical); new `scripts/env-preflight.ts` over pure `scripts/env-cascade.ts` gates `dev` (`--mode=next`) and `db:push`/`db:migrate`/`db:seed` (`--mode=dotenv`), replicating each consumer's real env cascade rather than approximating one; `next build`/`next start` deliberately ungated (Vercel never reads `.env`). All four commands exit 1 in 1–2 ms against prod `.env` and against a `db.invalid` sentinel; all four proceed with local DSNs (`db:seed` → 3/3/0, `/tech` renders 9 rows); a temp `.env.development.local` unblocks `dev` while `.env` holds prod; `npm run build` exits 0 with prod-shaped DSNs; suite 78/78 (+10 cascade cases). |
+| 4.8 — applyDelta rank resort | 🔄 | branch `fix/applydelta-rank-resort` (off `main` @ `0cf4cdc`) | — | Closes the Phase-4.5 client-merge gap noted below: a single-entry `rank_delta` left displaced rows holding a stale `rank`, so the overtaken #1 and the new #1 both rendered "1" (no "2") and handle order kept the ex-leader on top until a reconnect healed the board. `applyDelta` extracted verbatim from `LeaderboardScreen.tsx` into `src/features/leaderboard/apply-delta.ts` (`3bfa6c6` — vitest is node-environment with no jsdom, so the reducer was untestable inside a `'use client'` component), then fixed (`0440712`): sort by score desc, reassign `rank = index+1`, and recompute `dayDelta` against the FINAL rank so `dayStart = rank + dayDelta` survives the resort (`null` stays `null`). Received `newRank` demoted to a tiebreak for exactly-equal scores. 10 new cases in `tests/apply-delta.test.ts` — 6 fail against `3bfa6c6`, 10 pass against `0440712`; suite 88/88 (78 baseline + 10 new). Two new live checks (`scripts/rank-resort-check.mjs`, `scripts/flip-motion-check.mjs`) because `sse-ui-check.mjs` passes red — it only asserts both tabs AGREE on #1, and they agreed on the same wrong leader. Live red→green: `1:@alpha 1:@zeta …` → `1:@zeta 2:@alpha …`, numerals 1..9, 8/8 pass, incumbent badge `▲ up 1 today` → `— holding`; 17 intermediate FLIP positions per moving row, 9/9 rows not remounted. No scoring/settlement/schema/SSE-protocol change. PR pending owner review |
 
 ## Notes
 
@@ -52,11 +53,13 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   keeps its stale `rank` and the client sort ties over to handle-order —
   the old leader stays visually on top until a reconnect's fresh-fetch
   resync heals the board. Server truth (PG + ZSET) is correct at all times;
-  totals converge on every tab. **Approved 2026-08-27 as its own phase:** the
-  fix (sort by score desc, reassign `rank = index+1`, recompute `dayDelta`
-  against the final rank) is specced as **Phase 4.8** in
-  `docs/phase-4.7-4.8-spec.md`, on branch `fix/applydelta-rank-resort` off
-  `main` — not on the Phase-4 branch, which is now merged.
+  totals converge on every tab. **Fixed in Phase 4.8 (2026-08-28)** exactly as
+  proposed: after merging the event's entries `applyDelta` sorts by score
+  descending and reassigns `rank = index+1` (events carry absolute scores, so a
+  single-entry delta becomes self-consistent), recomputing each row's `dayDelta`
+  against its FINAL rank so the "up/down N today" badge cannot go stale. Landed
+  on `fix/applydelta-rank-resort` off `main`, not on the Phase-4 branch, which
+  is now merged.
 - Same window, operational: the dev ZSET was found drifted (@dod-gamma
   5.1947 in ZSET vs 5.5696 in PG — the 8/25 +$250 settlement's ZADD failed
   open, most likely during the Redis container restart; local Inngest cron
@@ -86,6 +89,28 @@ Status: ✅ done · 🔄 in progress · ⏳ planned
   build` does touch Redis at build time (ioredis DNS errors surface, non-fatal
   with an unreachable host) — another reason the build path must not be gated
   by a local-only allowlist.
+- Phase 4.8 verification tooling (2026-08-28): `scripts/rank-resort-check.mjs`
+  and `scripts/flip-motion-check.mjs` were added because
+  `scripts/sse-ui-check.mjs` **passes against the bug** — it asserts only that
+  both tabs agree on #1, and under the old reducer both agreed on the same
+  wrong leader. Two lessons worth keeping: (1) a screenshot of a BACKGROUNDED
+  tab hangs forever — Chrome stops producing frames and CDP's
+  `captureScreenshot` waits for one, so any multi-tab script must
+  `bringToFront()` first; the `--disable-*-backgrounding` flags keep timers
+  alive, not the compositor. (2) `process.exit()` inside a `try` skips the
+  `finally`, orphaning a headless Chrome per run — use `process.exitCode`.
+- Same window, a reduced-motion finding, NOT fixed (out of 4.8's scope): the
+  `@media (prefers-reduced-motion: reduce)` block in `globals.css` shortens the
+  flash overlay only. Nothing in `src/` sets `MotionConfig reducedMotion` or
+  `useReducedMotion`, so Framer Motion's layout slide still runs under `reduce`
+  — measured live, the demoted row still travelled through intermediate
+  positions. The comment above that block ("rows still reorder instantly, just
+  without the slide/flash") overstates it. Pre-existing since Phase 4.
+- Demo-board caveat for anyone re-running these checks: the integration suite
+  TRUNCATEs the local database, so rebuild the board (Phase-4.6 recipe above)
+  after any `npm test`. The rank-resort check also needs a bidder whose handle
+  sorts AFTER the current #1's — it refuses to run otherwise, since a pass on a
+  bidder that sorts earlier would prove nothing.
 
 ## Process from Phase 3 onward
 

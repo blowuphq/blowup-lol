@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardRow, BoardSnapshot } from '../../../features/leaderboard/board.js';
 import type { RankDeltaPayload } from '../../../lib/sse.js';
+import { applyDelta } from '../../../features/leaderboard/apply-delta.js';
 import { LeaderboardRow, Avatar } from '../../../components/shared/LeaderboardRow.js';
 import { VisitorCount } from '../../../components/shared/VisitorCount.js';
 import { ScoreFormula } from '../../../components/shared/ScoreFormula.js';
@@ -21,47 +22,10 @@ import { BoardFaq } from '../../../components/shared/BoardFaq.js';
  * via Last-Event-ID (handled by the browser + /api/events), then one fresh
  * snapshot fetch resyncs absolute state — idempotent because events carry
  * full row state, never diffs.
+ *
+ * The merge itself lives in features/leaderboard/apply-delta.ts so it can be
+ * unit-tested outside this client boundary.
  */
-
-/** Merge a settlement's entries into local state; returns ids whose rank changed. */
-function applyDelta(rows: BoardRow[], evt: RankDeltaPayload): { next: BoardRow[]; moved: string[] } {
-  const byId = new Map(rows.map((r) => [r.creatorId, r]));
-  const moved: string[] = [];
-
-  for (const e of evt.entries) {
-    const prev = byId.get(e.creatorId);
-    const newRank = e.newRank ?? prev?.rank ?? byId.size + 1;
-    if (!prev || prev.rank !== newRank) moved.push(e.creatorId);
-
-    // Day-start rank is preserved across updates: dayStart = rank + dayDelta
-    // (dayDelta null ⇒ joined today). New-to-this-client creators are "new".
-    let dayDelta: number | null = null;
-    if (prev) {
-      dayDelta =
-        prev.dayDelta === null ? null : (prev.rank + prev.dayDelta) - newRank;
-    }
-
-    byId.set(e.creatorId, {
-      creatorId: e.creatorId,
-      rank: newRank,
-      score: e.score,
-      handle: prev?.handle && !e.handle ? prev.handle : e.handle || '(unknown)',
-      name: e.name ?? prev?.name ?? null,
-      avatarUrl: e.avatarUrl ?? prev?.avatarUrl ?? null,
-      subscriberCount: e.subscriberCount ?? prev?.subscriberCount ?? null,
-      bidTotalCents: e.bidTotalCents || prev?.bidTotalCents || 0,
-      uniqueClicks: e.uniqueClicks || prev?.uniqueClicks || 0,
-      dayDelta,
-    });
-  }
-
-  return {
-    next: [...byId.values()].sort(
-      (a, b) => a.rank - b.rank || a.handle.localeCompare(b.handle),
-    ),
-    moved,
-  };
-}
 
 const fmtEnd = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', {
