@@ -24,7 +24,8 @@
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]', 'host.docker.internal']);
 
-function hostnameOf(url: string): string {
+/** Parsed hostname, or '' when unset/unparseable. Exported for display only. */
+export function hostnameOf(url: string): string {
   try {
     return new URL(url).hostname;
   } catch {
@@ -32,13 +33,23 @@ function hostnameOf(url: string): string {
   }
 }
 
+/** The loopback allowlist, exposed read-only for messages and tests. */
+export const LOCAL_HOSTNAMES: readonly string[] = [...LOCAL_HOSTS];
+
 /**
  * Throws with a SAFETY ABORT message unless both URLs are local. REDIS_URL
  * unset is allowed (src/lib/redis.ts defaults to localhost); DATABASE_URL
  * unset is NOT (no safe default exists).
+ *
+ * Pure: takes the DSNs rather than reading process.env, so callers that resolve
+ * env differently from `process.env` — scripts/env-preflight.ts replicates the
+ * Next.js and dotenv cascades — enforce the same policy from one definition.
  */
-export function assertLocalEnv(): void {
-  const pgHost = hostnameOf(process.env.DATABASE_URL ?? '');
+export function assertLocalDsns(
+  databaseUrl: string | undefined,
+  redisUrl: string | undefined,
+): void {
+  const pgHost = hostnameOf(databaseUrl ?? '');
   if (!LOCAL_HOSTS.has(pgHost)) {
     throw new Error(
       `SAFETY ABORT: this command truncates/writes the database named by DATABASE_URL — ` +
@@ -47,11 +58,16 @@ export function assertLocalEnv(): void {
         `Point DATABASE_URL at the local Docker Postgres or export a local value in your shell.`,
     );
   }
-  const redisHost = hostnameOf(process.env.REDIS_URL ?? '');
+  const redisHost = hostnameOf(redisUrl ?? '');
   if (!LOCAL_HOSTS.has(redisHost) && redisHost !== '') {
     throw new Error(
       `SAFETY ABORT: this command writes/flushes keys on REDIS_URL — it must point at a ` +
         `LOCAL Redis (${[...LOCAL_HOSTS].join(', ')}), but its host is '${redisHost}'.`,
     );
   }
+}
+
+/** `assertLocalDsns` applied to this process's own environment. */
+export function assertLocalEnv(): void {
+  assertLocalDsns(process.env.DATABASE_URL, process.env.REDIS_URL);
 }
