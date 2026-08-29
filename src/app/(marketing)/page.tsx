@@ -6,23 +6,29 @@ import { loadBoard } from '../../features/leaderboard/board.js';
 import { visitorCount } from '../../lib/sse.js';
 import { Avatar } from '../../components/shared/Avatar.js';
 import { CountUp } from '../../components/shared/CountUp.js';
+import { ClaimForm } from '../../components/shared/ClaimForm.js';
+import { CheckoutStatusBanner } from '../../components/shared/CheckoutStatusBanner.js';
 
 /**
- * Root landing page (Phase 4.6): the outreach/reviewer surface. Evolved from
- * the pre-launch "coming soon" page into a live showcase — hero wordmark
- * treatment kept as-is, everything under it proves the product is alive with
- * REAL numbers: season totals and per-board #1s come from the same
- * loadBoard() calls /categories uses (parity by construction, §1 invariant:
- * categories come from the database, never a hardcoded list); watcher counts
- * come from the §6 Redis visitor counters (60s heartbeat TTL, reads clamp at
- * zero). force-dynamic because every render must reflect the boards right now.
+ * Root landing page (Phase 4.6): proof-of-life showcase.
+ * Phase 4.3: adds the self-serve claim form (ClaimForm) and checkout status
+ * banner (CheckoutStatusBanner). searchParams is accepted per Next.js 16
+ * App Router convention so the root page reads ?checkout=success/cancelled
+ * from Stripe's redirect-back URLs.
  */
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = { title: 'Blowup — pick your battle' };
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const checkoutStatus = typeof sp.checkout === 'string' ? sp.checkout : undefined;
+
   const cats = await db.select().from(categories).where(eq(categories.active, true));
   const boards = await Promise.all(cats.map((c) => loadBoard(c.slug)));
   const chips = cats.map((c, i) => ({
@@ -34,6 +40,18 @@ export default async function Home() {
   const watchers = await Promise.all(cats.map((c) => visitorCount(c.slug)));
   const totalWatchers = watchers.reduce((sum, n) => sum + n, 0);
   const rankedCreators = boards.reduce((sum, b) => sum + b.rows.length, 0);
+
+  // ClaimForm data: derive from the same boards already loaded — no extra fetch
+  const claimCategories = cats.map((c, i) => ({
+    slug: c.slug,
+    name: c.name,
+    leader: boards[i].rows[0]
+      ? {
+          handle: boards[i].rows[0].handle,
+          bidTotalCents: boards[i].rows[0].bidTotalCents,
+        }
+      : null,
+  }));
 
   return (
     <main className="relative min-h-dvh overflow-x-clip bg-zinc-950 text-zinc-100 selection:bg-hot selection:text-white">
@@ -118,6 +136,13 @@ export default async function Home() {
       </section>
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-20 pt-16 sm:px-6">
+        {/* Checkout status banner — shown on redirect back from Stripe */}
+        {checkoutStatus && (
+          <div className="mb-8">
+            <CheckoutStatusBanner status={checkoutStatus} />
+          </div>
+        )}
+
         {/* Reigning #1 preview — same rows[0] derivation /categories renders,
             so the two pages can never disagree */}
         <section aria-label="Current leaders">
@@ -177,6 +202,11 @@ export default async function Home() {
               );
             })}
           </div>
+        </section>
+
+        {/* Claim form — joins the board by calling /api/checkout directly */}
+        <section aria-label="Join the leaderboard" className="mt-14">
+          <ClaimForm categories={claimCategories} />
         </section>
 
         {/* How it works — three moves, board-native voice */}

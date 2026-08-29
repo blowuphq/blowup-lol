@@ -14,6 +14,7 @@ import {
   type CategoryChipData,
 } from '../../../components/shared/CategoryChips.js';
 import { BoardFaq } from '../../../components/shared/BoardFaq.js';
+import { ClaimForm } from '../../../components/shared/ClaimForm.js';
 
 /**
  * The live board (architecture §3 Phase C): SSR renders current truth, an
@@ -211,6 +212,25 @@ export default function LeaderboardScreen({
 
         {/* Plain-English FAQ — supplements the formula panel, collapsed by default */}
         <BoardFaq />
+
+        {/* Self-serve claim form (Phase 4.3): lets a creator join directly from
+            the board page without going via the root first. Category is
+            pre-selected and locked to this board; leader data comes from the
+            same initial snapshot, so no extra fetch is needed. */}
+        <div className="mt-8">
+          <ClaimForm
+            preselectedSlug={slug}
+            categories={[
+              {
+                slug,
+                name: initial.categoryName,
+                leader: leader
+                  ? { handle: leader.handle, bidTotalCents: leader.bidTotalCents }
+                  : null,
+              },
+            ]}
+          />
+        </div>
 
         <footer className="mt-12 flex items-center justify-between text-xs uppercase tracking-widest text-zinc-600">
           <Link href="/categories" className="transition-colors hover:text-hot">
