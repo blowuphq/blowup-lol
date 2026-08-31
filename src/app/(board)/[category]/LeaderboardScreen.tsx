@@ -236,7 +236,12 @@ export default function LeaderboardScreen({
           <Link href="/categories" className="transition-colors hover:text-hot">
             All categories →
           </Link>
-          <span>blowup.lol</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="transition-colors hover:text-zinc-400">
+              Privacy
+            </Link>
+            <span>blowup.lol</span>
+          </div>
         </footer>
       </div>
     </main>

@@ -1,17 +1,14 @@
 import { CUSTOM_BID } from '../../config/site.js';
 import { getActiveSeason } from '../../lib/redis.js';
-import { getStripe } from '../../lib/stripe.js';
+import { getDodo } from '../../lib/dodo.js';
 import { assertBidAmount } from './pipeline.js';
 
 /**
  * Checkout session creation (architecture §4): the ONLY thing the public API
  * does before money moves. It validates, resolves the season, and hands off to
- * Stripe-hosted Checkout. No DB writes happen here — settlement is driven
+ * Dodo-hosted Checkout. No DB writes happen here — settlement is driven
  * exclusively by the verified webhook (settlement.ts).
  */
-
-/** Fixed per-integration tag (stripe-best-practices: label + 8 random letters). */
-const INTEGRATION_IDENTIFIER = 'blowup-bid-checkout-kqvztbmn';
 
 export interface CheckoutRequest {
   categorySlug: string;
@@ -23,25 +20,6 @@ export interface CheckoutRequest {
 export interface CreatedCheckout {
   sessionId: string;
   url: string;
-}
-
-/** Structural surface of `stripe.checkout.sessions` — injectable for tests. */
-export interface CheckoutSessionsApi {
-  create(params: {
-    mode: 'payment';
-    line_items: Array<{
-      quantity: number;
-      price_data: {
-        currency: string;
-        unit_amount: number;
-        product_data: { name: string };
-      };
-    }>;
-    metadata: Record<string, string>;
-    success_url: string;
-    cancel_url: string;
-    integration_identifier?: string;
-  }): Promise<{ id: string; url: string | null }>;
 }
 
 /**
@@ -61,7 +39,6 @@ export function normalizeHandle(raw: string): string {
 
 export async function createCheckoutSession(
   input: CheckoutRequest,
-  sessions: CheckoutSessionsApi = getStripe().checkout.sessions,
 ): Promise<CreatedCheckout> {
   if (!input.categorySlug || typeof input.categorySlug !== 'string') {
     throw new Error('categorySlug is required');
@@ -70,26 +47,25 @@ export async function createCheckoutSession(
   assertBidAmount(input.amountCents);
 
   // Fail fast on unknown categories / seasons without an active one — before
-  // we ever redirect the bidder to Stripe.
+  // we ever redirect the bidder to Dodo.
   const { season } = await getActiveSeason(input.categorySlug);
 
+  const productId = process.env.DODO_BID_PRODUCT_ID;
+  if (!productId) {
+    throw new Error('DODO_BID_PRODUCT_ID is not set — cannot create checkout session');
+  }
+
   const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
-  const session = await sessions.create({
-    mode: 'payment',
-    // NOTE: no payment_method_types — Stripe's dynamic payment method selection
-    // applies (stripe-best-practices). Currency is USD-only for V1.
-    line_items: [
+  const session = await getDodo().checkoutSessions.create({
+    product_cart: [
       {
+        product_id: productId,
         quantity: 1,
-        price_data: {
-          currency: 'usd',
-          unit_amount: input.amountCents,
-          product_data: { name: `Blowup rank bid · ${handle}` },
-        },
+        amount: input.amountCents, // Pay-what-you-want: dynamic amount above the product's floor
       },
     ],
     // Identity rides through to the webhook in metadata. Amount deliberately
-    // NOT trusted from metadata at settlement time — Stripe's amount_total is
+    // NOT trusted from metadata at settlement time — Dodo's total_amount is
     // what was actually paid.
     metadata: {
       categorySlug: input.categorySlug,
@@ -97,11 +73,10 @@ export async function createCheckoutSession(
       name: input.name?.slice(0, 80) ?? '',
       seasonId: season.id,
     },
-    success_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/?checkout=cancelled`,
-    integration_identifier: INTEGRATION_IDENTIFIER,
+    return_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    billing_currency: 'USD',
   });
 
-  if (!session.url) throw new Error('Stripe returned no checkout URL');
-  return { sessionId: session.id, url: session.url };
+  if (!session.checkout_url) throw new Error('Dodo returned no checkout URL');
+  return { sessionId: session.session_id, url: session.checkout_url };
 }

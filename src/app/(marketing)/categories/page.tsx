@@ -125,8 +125,14 @@ export default async function CategoriesPage() {
           })}
         </section>
 
-        <footer className="mt-12 text-center text-xs uppercase tracking-widest text-zinc-600">
-          blowup.lol
+        <footer className="mt-12 flex flex-col items-center gap-2 text-center text-xs uppercase tracking-widest text-zinc-600">
+          <span>blowup.lol</span>
+          <Link
+            href="/privacy"
+            className="text-zinc-600 transition-colors hover:text-zinc-400"
+          >
+            Privacy Policy
+          </Link>
         </footer>
       </div>
     </main>

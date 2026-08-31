@@ -73,7 +73,18 @@ let cached: DodoPayments | null = null;
 export function tryGetDodo(): DodoPayments | null {
   const key = process.env.DODO_API_KEY;
   if (!key) return null;
-  if (!cached) cached = new DodoPayments({ bearerToken: key });
+
+  // The SDK expects DODO_PAYMENTS_API_KEY by default, so we explicitly map our DODO_API_KEY
+  // to bearerToken. We also rely on process.env.NODE_ENV or an explicit env var to control 
+  // the environment ('test_mode' vs 'live_mode'), as sandbox keys require 'test_mode'.
+  const isProd = process.env.NODE_ENV === 'production';
+  const environment = isProd ? 'live_mode' : 'test_mode';
+
+  if (!cached) cached = new DodoPayments({ 
+    bearerToken: key,
+    environment
+  });
+  
   return cached;
 }
 
@@ -84,8 +95,7 @@ export function getDodo(): DodoPayments {
 }
 ```
 
-The `bearerToken` constructor param is how the Node SDK takes the API key (verified
-against SDK source: `Authorization: Bearer {key}`).
+The `bearerToken` constructor param is used explicitly because the Node SDK defaults to looking for `DODO_PAYMENTS_API_KEY`, but our environment uses `DODO_API_KEY`. We also explicitly pass `environment` because sandbox keys will throw a 401 Unauthorized if the client defaults to `live_mode`.
 
 **What does NOT change:** The lazy singleton pattern, the `try/get` naming pair, the
 error message convention.

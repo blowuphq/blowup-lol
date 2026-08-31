@@ -135,6 +135,8 @@ export const bids = pgTable(
       .references(() => seasons.id, { onDelete: 'restrict' }),
     amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
     currency: char('currency', { length: 3 }).notNull().default('USD'),
+    // Idempotent settlement fields — named for Stripe originally, now
+    // containing Dodo's session_id and payment_id respectively.
     stripeCheckoutSessionId: text('stripe_checkout_session_id'),
     stripePaymentIntentId: text('stripe_payment_intent_id'),
     paymentStatus: bidPaymentStatusEnum('payment_status').notNull().default('pending'),
@@ -143,8 +145,8 @@ export const bids = pgTable(
   },
   (t) => [
     check('bids_amount_range_check', sql`${t.amountCents} between 500 and 1000000`),
-    // Idempotency anchor: duplicate Stripe events cannot credit twice. Multiple NULLs allowed
-    // (pending bids have no PI yet).
+    // Idempotency anchor: duplicate webhook events cannot credit twice. Multiple NULLs allowed
+    // (pending bids have no payment ID yet).
     uniqueIndex('bids_payment_intent_unique').on(t.stripePaymentIntentId),
     index('bids_campaign_idx').on(t.campaignId),
     index('bids_created_at_idx').on(t.createdAt.desc()),
@@ -197,9 +199,9 @@ export const activities = pgTable(
   (t) => [index('activities_season_created_idx').on(t.seasonId, t.createdAt.desc())],
 );
 
-/** Insert-first idempotency gate for Stripe's at-least-once webhook delivery. */
+/** Insert-first idempotency gate for webhook at-least-once delivery. */
 export const webhookEvents = pgTable('webhook_events', {
-  id: text('id').primaryKey(), // Stripe event ID
+  id: text('id').primaryKey(), // payment_id
   type: text('type').notNull(),
   receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),

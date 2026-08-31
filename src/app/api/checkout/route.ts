@@ -2,7 +2,7 @@ import { createCheckoutSession } from '../../../features/bidding/checkout.js';
 
 /**
  * Public checkout entrypoint (architecture §4): validates the bid, creates a
- * Stripe-hosted Checkout Session, returns its URL. NO database writes and NO
+ * Dodo-hosted Checkout Session, returns its URL. NO database writes and NO
  * rank effects happen here — settlement is webhook-driven only.
  */
 
@@ -36,7 +36,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'checkout failed';
     // Configuration problems are ours (500); validation problems are the caller's.
-    if (/STRIPE_SECRET_KEY/.test(message)) {
+    if (/DODO_API_KEY/.test(message) || /DODO_BID_PRODUCT_ID/.test(message)) {
       console.error('[checkout] misconfigured:', message);
       return Response.json({ error: 'payment system unavailable' }, { status: 500 });
     }
