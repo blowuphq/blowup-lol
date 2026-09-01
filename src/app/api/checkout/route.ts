@@ -1,4 +1,5 @@
 import { createCheckoutSession } from '../../../features/bidding/checkout.js';
+import { getDodoConfig } from '../../../lib/dodo.js';
 
 /**
  * Public checkout entrypoint (architecture §4): validates the bid, creates a
@@ -24,6 +25,10 @@ export async function POST(req: Request): Promise<Response> {
   if (b.amountCents !== undefined && typeof b.amountCents !== 'number') {
     return Response.json({ error: 'amountCents must be a number of cents' }, { status: 400 });
   }
+
+  // Debug: log Dodo config at request time
+  const config = getDodoConfig();
+  console.log('[checkout] Dodo config:', config);
 
   try {
     const created = await createCheckoutSession({

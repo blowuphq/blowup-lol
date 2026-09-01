@@ -52,3 +52,11 @@ export function getDodo(): DodoPayments {
   }
   return client;
 }
+
+export function getDodoConfig(): { environment: string; keyPrefix: string } | null {
+  const key = process.env.DODO_API_KEY;
+  if (!key) return null;
+  const environment = (process.env.DODO_ENVIRONMENT as 'test_mode' | 'live_mode') ??
+    (process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode');
+  return { environment, keyPrefix: key.slice(0, 8) };
+}
