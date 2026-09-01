@@ -17,8 +17,9 @@ export function tryGetDodo(): DodoPayments | null {
   // The SDK expects DODO_PAYMENTS_API_KEY by default, so we explicitly map our DODO_API_KEY
   // to bearerToken. We also rely on process.env.NODE_ENV or an explicit env var to control
   // the environment ('test_mode' vs 'live_mode'), as sandbox keys require 'test_mode'.
-  const isProd = process.env.NODE_ENV === 'production';
-  const environment = isProd ? 'live_mode' : 'test_mode';
+  // DODO_ENVIRONMENT takes precedence over NODE_ENV so test keys work on production deployments.
+  const environment = (process.env.DODO_ENVIRONMENT as 'test_mode' | 'live_mode') ??
+    (process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode');
 
   if (!cached) {
     cached = new DodoPayments({
