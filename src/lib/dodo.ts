@@ -9,6 +9,7 @@ import DodoPayments from 'dodopayments';
  */
 
 let cached: DodoPayments | null = null;
+let cachedEnv: string | null = null;
 
 export function tryGetDodo(): DodoPayments | null {
   const key = process.env.DODO_API_KEY;
@@ -21,11 +22,24 @@ export function tryGetDodo(): DodoPayments | null {
   const environment = (process.env.DODO_ENVIRONMENT as 'test_mode' | 'live_mode') ??
     (process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode');
 
-  if (!cached) {
+  // Debug: log environment selection (only in production to avoid noise)
+  if (process.env.NODE_ENV === 'production') {
+    console.log('[dodo] Environment selection:', {
+      DODO_ENVIRONMENT: process.env.DODO_ENVIRONMENT,
+      NODE_ENV: process.env.NODE_ENV,
+      selectedEnvironment: environment,
+      cachedEnv,
+      keyPrefix: key.slice(0, 8),
+    });
+  }
+
+  // Recreate client if environment changed (handles env var updates between invocations)
+  if (!cached || cachedEnv !== environment) {
     cached = new DodoPayments({
       bearerToken: key,
       environment
     });
+    cachedEnv = environment;
   }
 
   return cached;
