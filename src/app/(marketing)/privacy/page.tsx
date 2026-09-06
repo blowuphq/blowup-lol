@@ -775,7 +775,7 @@ export default function PrivacyPage() {
 
       {/* footer */}
       <footer className="border-t border-white/10 py-8 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
-        blowup.lol · Privacy Policy · Effective {EFFECTIVE_DATE}
+        blowup.lol · <a href="/privacy" className="underline hover:text-zinc-400">Privacy Policy</a> · <a href="/terms" className="underline hover:text-zinc-400">Terms of Service</a> · <a href="/refund-policy" className="underline hover:text-zinc-400">Refund Policy</a> · Effective {EFFECTIVE_DATE}
       </footer>
     </div>
   );

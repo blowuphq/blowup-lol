@@ -240,6 +240,18 @@ export default function LeaderboardScreen({
             <Link href="/privacy" className="transition-colors hover:text-zinc-400">
               Privacy
             </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link href="/terms" className="transition-colors hover:text-zinc-400">
+              Terms
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link href="/refund-policy" className="transition-colors hover:text-zinc-400">
+              Refunds
+            </Link>
             <span>blowup.lol</span>
           </div>
         </footer>

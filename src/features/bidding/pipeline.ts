@@ -9,7 +9,7 @@ import { publishSettlement } from '../leaderboard/events.js';
 
 /**
  * The ranking pipeline (architecture §3), driven end-to-end in Phase 2 by a
- * FAKE paid bid — no Stripe yet. A real webhook settlement (later phase) will
+ * FAKE paid bid — no payment provider yet. A real webhook settlement (later phase) will
  * call the same `settleBidInSeason` core after signature verification.
  *
  * Invariants honored here:
@@ -120,7 +120,7 @@ export async function getOrCreateCampaign(
  */
 export interface RealPayment {
   checkoutSessionId: string;
-  paymentIntentId: string;
+  paymentId: string;
   /**
    * Real webhook flow: insert the bid as 'pending', then flip it through the
    * trigger-whitelisted pending→succeeded transition (which stamps
@@ -157,7 +157,7 @@ export async function settlePaidBid(
 
     // APPEND-ONLY insert. Fake bids are born 'succeeded' (they simulate a
     // verified webhook); real webhook settlement passes `payment` with real
-    // Stripe ids and bornPending — the bid exists briefly as pending, then the
+    // Dodo ids and bornPending — the bid exists briefly as pending, then the
     // trigger-whitelisted transition flips it before totals are summed.
     const [bid] = await tx
       .insert(bids)
@@ -166,9 +166,9 @@ export async function settlePaidBid(
         campaignId: input.campaignId,
         seasonId: input.seasonId,
         amountCents: input.amountCents,
-        stripeCheckoutSessionId:
+        dodoCheckoutSessionId:
           input.payment?.checkoutSessionId ?? `cs_fake_${randomUUID()}`,
-        stripePaymentIntentId: input.payment?.paymentIntentId ?? `pi_fake_${randomUUID()}`,
+        dodoPaymentId: input.payment?.paymentId ?? `pay_fake_${randomUUID()}`,
         paymentStatus: input.payment?.bornPending ? 'pending' : 'succeeded',
       })
       .returning();

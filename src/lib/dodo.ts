@@ -1,7 +1,7 @@
 import DodoPayments from 'dodopayments';
 
 /**
- * Dodo Payments client access. Two flavors, same pattern as the prior Stripe client:
+ * Dodo Payments client access. Two flavors:
  *
  *  - Webhook VERIFICATION uses the SDK's unwrap() helper which wraps standardwebhooks.
  *  - Session CREATION and REFUNDS need an API key. getDodo() throws if unset;

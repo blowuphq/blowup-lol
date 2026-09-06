@@ -5,7 +5,7 @@ import { BID_TIERS_CENTS, CUSTOM_BID } from '../../config/site.js';
 
 /**
  * Self-serve creator intake form (Phase 4.3): lets any YouTube creator submit
- * their handle, pick a category and bid amount, and start a real Stripe
+ * their handle, pick a category and bid amount, and start a real Dodo Payments
  * Checkout without manual intervention. Wires to the EXISTING /api/checkout
  * endpoint (architecture §4) — no new payment logic exists here.
  *
@@ -123,7 +123,7 @@ export function ClaimForm({
         throw new Error(data?.error ?? 'Checkout unavailable — try again.');
       }
 
-      // Stripe-hosted Checkout — same path as BoostPicker (architecture §4)
+      // Dodo Payments Checkout — same path as BoostPicker (architecture §4)
       window.location.assign(data.url);
     } catch (err) {
       setErrors({ submit: err instanceof Error ? err.message : 'Checkout unavailable — try again.' });
@@ -318,7 +318,7 @@ export function ClaimForm({
           className="group w-full cursor-pointer rounded-full bg-hot px-7 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-hot/25 transition-colors hover:bg-hot/90 disabled:cursor-wait disabled:opacity-60"
         >
           {busy ? (
-            <span aria-live="polite">Opening Stripe checkout…</span>
+            <span aria-live="polite">Opening Dodo Payments checkout…</span>
           ) : (
             <span className="inline-flex items-center gap-2">
               Claim your spot
@@ -330,7 +330,7 @@ export function ClaimForm({
         </button>
 
         <p className="text-center text-xs text-zinc-600">
-          Secure payment via Stripe · seasons reset weekly · 85% bid / 15% engagement score
+          Secure payment via Dodo Payments · seasons reset weekly · 85% bid / 15% engagement score
         </p>
       </form>
     </section>

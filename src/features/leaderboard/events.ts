@@ -6,7 +6,7 @@ import type { SettleResult } from '../bidding/pipeline.js';
 
 /**
  * Rank-delta publishing (architecture §3.B10): ONE composer used by BOTH
- * settlement paths — the dev/fake pipeline and the real Stripe webhook — so
+ * settlement paths — the dev/fake pipeline and the real Dodo Payments webhook — so
  * connected clients behave identically no matter which path moved money.
  *
  * Payload = the documented `{type:'rank_delta', entries:[…], activity:{…}}`

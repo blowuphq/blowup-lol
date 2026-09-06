@@ -212,18 +212,18 @@ describe('settlement of payment.succeeded', () => {
     // Real Dodo ids on the append-only row; born pending, flipped via the
     // whitelisted transition (which stamps status_updated_at).
     const bidRes = await db.execute(sql`
-      SELECT stripe_checkout_session_id AS cs, stripe_payment_intent_id AS pi,
+      SELECT dodo_checkout_session_id AS cs, dodo_payment_id AS pid,
              payment_status AS status, status_updated_at AS stamped, amount_cents AS amount
       FROM bids`);
     const bid = bidRes.rows[0] as {
       cs: string;
-      pi: string;
+      pid: string;
       status: string;
       stamped: string | null;
       amount: string;
     };
     expect(bid.cs).toBe(payment.checkout_session_id);
-    expect(bid.pi).toBe(payment.payment_id);
+    expect(bid.pid).toBe(payment.payment_id);
     expect(bid.amount).toBe('5000');
     expect(bid.status).toBe('succeeded');
     expect(bid.stamped).not.toBeNull();
@@ -273,7 +273,7 @@ describe('settlement of payment.succeeded', () => {
     );
 
     // Redelivery: claimEvent returns true (unprocessed), but settlePaidBid hits
-    // the bids.stripe_payment_intent_id unique constraint.
+    // the bids.dodo_payment_id unique constraint.
     const replay = await postPayment(payment);
     expect(replay.body.outcome?.kind).toBe('duplicate_settlement');
     expect(await counts()).toEqual({ bids: 1, activities: 1 });

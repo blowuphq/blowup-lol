@@ -8,7 +8,7 @@ import { BID_TIERS_CENTS } from '../../config/site.js';
  * layout: BoostTrigger is the compact button inside the row's main line;
  * BoostPicker expands BELOW that line when triggered. Choosing a tier POSTs
  * to /api/checkout (architecture §4 — the only public checkout entrypoint)
- * and redirects to the returned Stripe-hosted URL. No new payment surface
+ * and redirects to the returned Dodo Payments checkout URL. No new payment surface
  * lives here.
  *
  * Amounts come from the same BID_TIERS_CENTS the checkout validates against,
@@ -65,7 +65,7 @@ export function BoostPicker({
       if (!res.ok || !data?.url) {
         throw new Error(data?.error ?? 'checkout unavailable — try again');
       }
-      window.location.assign(data.url); // Stripe-hosted checkout
+      window.location.assign(data.url); // Dodo Payments checkout
     } catch (err) {
       setError(err instanceof Error ? err.message : 'checkout unavailable — try again');
       setBusy(false);
@@ -99,7 +99,7 @@ export function BoostPicker({
         </button>
       </div>
       <p aria-live="polite" className="mt-2 min-h-4 text-xs text-zinc-500">
-        {busy ? 'Opening Stripe checkout…' : (error ?? ' ')}
+        {busy ? 'Opening Dodo Payments checkout…' : (error ?? ' ')}
       </p>
     </div>
   );

@@ -20,8 +20,8 @@ CREATE TABLE "bids" (
 	"season_id" uuid NOT NULL,
 	"amount_cents" bigint NOT NULL,
 	"currency" char(3) DEFAULT 'USD' NOT NULL,
-	"stripe_checkout_session_id" text,
-	"stripe_payment_intent_id" text,
+	"dodo_checkout_session_id" text,
+	"dodo_payment_id" text,
 	"payment_status" "bid_payment_status" DEFAULT 'pending' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"status_updated_at" timestamp with time zone,
@@ -115,7 +115,7 @@ ALTER TABLE "season_results" ADD CONSTRAINT "season_results_season_id_seasons_id
 ALTER TABLE "season_results" ADD CONSTRAINT "season_results_creator_id_creators_id_fk" FOREIGN KEY ("creator_id") REFERENCES "public"."creators"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "seasons" ADD CONSTRAINT "seasons_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "activities_season_created_idx" ON "activities" USING btree ("season_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE UNIQUE INDEX "bids_payment_intent_unique" ON "bids" USING btree ("stripe_payment_intent_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "bids_payment_id_unique" ON "bids" USING btree ("dodo_payment_id");--> statement-breakpoint
 CREATE INDEX "bids_campaign_idx" ON "bids" USING btree ("campaign_id");--> statement-breakpoint
 CREATE INDEX "bids_created_at_idx" ON "bids" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "bids_pending_idx" ON "bids" USING btree ("payment_status") WHERE payment_status = 'pending';--> statement-breakpoint
