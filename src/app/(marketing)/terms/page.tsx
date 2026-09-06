@@ -110,10 +110,10 @@ function ContactBlock() {
       <p className="mt-1">
         Email:{' '}
         <a
-          href="mailto:privacy@blowup.lol"
+          href="mailto:varshith@blowup.lol"
           className="text-hot underline hover:text-hot/80"
         >
-          privacy@blowup.lol
+          varshith@blowup.lol
         </a>
       </p>
       <p className="mt-3 text-xs text-zinc-500">
