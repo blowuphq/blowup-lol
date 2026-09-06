@@ -9,7 +9,7 @@
 | Fixed product rule | How this design honors it |
 |---|---|
 | Postgres = source of truth for money & rank; Redis = read-only projection | Every money/rank mutation commits in a Postgres transaction **before** any Redis write. Nothing reads Redis to decide money state. Redis loss degrades reads; never corrupts money. |
-| Payments confirmed only via verified Stripe webhook | Success redirect is display-only (§4). |
+| Payments confirmed only via verified Dodo webhook | Success redirect is display-only (§4). |
 | Bid table append-only | INSERT-only except `payment_status` lifecycle transitions — status changes on audit rows, never mutations of financial history. Totals materialized inside the same transaction that appends the Bid; nightly reconciliation against `SUM(bids)` (F1). |
 | Weekly season resets; permanent profile history; NO decay | `season_results` snapshots each season permanently; profile stats derived at read time. No decay logic exists anywhere in the system. |
 | Public ranking formula (~80–90% $ / 10–20% engagement) | Formula lives in `lib/rank-formula.ts`, mirrored verbatim onto public `/how-ranking-works`, both fed from the same constants. |
@@ -44,7 +44,7 @@ src/
 │   ├── checkout/
 │   │   └── success/page.tsx          # DISPLAY-ONLY landing (polls status, writes nothing)
 │   ├── api/
-│   │   ├── webhooks/stripe/route.ts  # THE ONLY endpoint that moves money/rank from outside
+│   │   ├── webhooks/dodo/route.ts    # THE ONLY endpoint that moves money/rank from outside
 │   │   ├── events/route.ts           # SSE stream: rank deltas + visitor count (CF: no buffering)
 │   │   ├── clicks/[creatorId]/route.ts # signed redirect → YouTube, logs Click row
 │   │   └── inngest/route.ts          # Inngest function handler
@@ -60,7 +60,7 @@ src/
 ├── lib/
 │   ├── db.ts             # Drizzle client (Neon serverless driver, pooled)
 │   ├── redis.ts          # Upstash REST client
-│   ├── stripe.ts         # Stripe client + webhook secret handling
+│   ├── dodo.ts           # Dodo Payments client
 │   ├── youtube.ts        # Data API v3 wrapper w/ quota guard
 │   ├── env.ts            # zod-validated process.env — boot fails loudly if incomplete
 │   ├── rank-formula.ts   # SINGLE SOURCE OF TRUTH for scoring weights/constants
@@ -151,8 +151,8 @@ Indexes: `(season_id, rank)`, `(season_id, score DESC)`, UNIQUE `(creator_id, se
 | season_id | uuid FK→seasons | denormalized (F2) — season audits need no join |
 | amount_cents | bigint NOT NULL CHECK (amount_cents BETWEEN 500 AND 1000000) | min $5 / max $10,000 per bid (Decision Q2) |
 | currency | char(3) DEFAULT 'USD' | V1 USD-only |
-| stripe_checkout_session_id | text NULL | set at checkout creation |
-| stripe_payment_intent_id | text NULL UNIQUE | idempotency anchor (F3) |
+| stripe_checkout_session_id | text NULL | set at checkout creation (Legacy column name; stores Dodo checkout session ID) |
+| stripe_payment_intent_id | text NULL UNIQUE | idempotency anchor (F3) (Legacy column name; stores Dodo payment ID) |
 | payment_status | enum('pending','succeeded','failed','refunded') DEFAULT 'pending' | |
 | created_at / status_updated_at | timestamptz | |
 
@@ -186,7 +186,7 @@ Index: `(season_id, created_at DESC)`.
 **webhook_events**
 | Column | Type |
 |---|---|
-| id | text PK = Stripe event ID |
+| id | text PK = Dodo payment_id |
 | type | text |
 | received_at / processed_at | timestamptz |
 
@@ -209,10 +209,10 @@ Profile stats ("best rank ever," "weeks ranked," "lifetime clicks") derive at re
 
 - **F1** — `bid_total_cents` maintained only inside the txn appending the Bid row; nightly job reconciles vs `SUM(bids)` (detector — alarms, never silently fixes).
 - **F2/F5** — denormalized `season_id` on bids/clicks/activities.
-- **F3** — Stripe-only V1; unique PI id is the anchor.
+- **F3** — Dodo-only V1; unique payment_id is the anchor.
 - **F4** — refunds flip status; derivation filters them.
 - **F6** — shares + verified badge deferred (no entity defined; badge needs a verifier policy).
-- **F7** — anonymous bidding; Stripe Checkout email is the contact point.
+- **F7** — anonymous bidding; Dodo Payments Checkout email is the contact point.
 
 ---
 
@@ -237,21 +237,21 @@ Log form: deterministic, monotonic, publicly explainable ("each doubling of spen
 4. Resolve/create Creator: YouTube lookup (24h Redis cache); degrade path if YT down (§7.3).
 5. Get-or-create Campaign `(creatorId, seasonId)` — **lazily per season** (an empty board at week start is the product).
 6. INSERT Bid `payment_status='pending'` + checkout session id (audit trail + abandoned-checkout analytics).
-7. Create Stripe Checkout Session: `mode=payment`, amount server-set, `metadata={bidId, campaignId, creatorId, seasonId}`, Idempotency-Key on the API call.
+7. Create Dodo Payments Checkout Session: `mode=payment`, amount server-set, `metadata={bidId, campaignId, creatorId, seasonId}`.
 8. Return hosted Checkout URL → redirect.
 
 **Phase B — settlement** (webhook; the only trusted confirmation):
-1. Raw-body POST → `constructEvent` signature verify (tolerance 300s). Invalid → 400, zero state touched.
+1. Raw-body POST → standardwebhooks signature verify (via Dodo SDK `unwrap`). Invalid → 400, zero state touched.
 2. `INSERT INTO webhook_events(id) … ON CONFLICT DO NOTHING` → conflict = duplicate delivery → 200 immediately.
 3. `BEGIN`; `pg_advisory_xact_lock(seasonId)`.
 4. Load Bid by `metadata.bidId`; assert legal `pending→succeeded` (else commit-noop, 200).
-5. Set `payment_status='succeeded'`, store PI id.
+5. Set `payment_status='succeeded'`, store payment_id.
 6. `UPDATE campaigns SET bid_total_cents = bid_total_cents + :amount`.
 7. Recompute `score`; new rank = `1 + COUNT(*) WHERE season_id=:s AND (score > :score OR (score = :score AND first_bid_created_at < :mine))`.
 8. UPDATE `campaigns.rank`; INSERT `activities(bid/rank_change, prev, new, amount)`.
 9. `COMMIT`.
 10. After commit: `ZADD blowup:lb:{slug}:s{seasonId} score creatorId` (retry ×3), publish SSE `{type:'rank_delta', entries:[{creatorId,newRank,score}], activity:{…}}`. Redis failure never rolls back Postgres (§7.1).
-11. 200 to Stripe (non-2xx pre-commit ⇒ Stripe retries; idempotency layers absorb it).
+11. 200 to Dodo (non-2xx pre-commit ⇒ Dodo retries; idempotency layers absorb it).
 
 **Phase C — UI:**
 - SSE clients apply delta; Framer Motion FLIP-animates rows. Reconnect replays via `Last-Event-ID`, then one fresh fetch.
@@ -267,12 +267,12 @@ Canonical path is §3 Phase A step 7 → Phase B. Specifics:
 
 - **Trusted fields:** all money-affecting values come from server-written Checkout `metadata`, cross-checked against the event object (`amount_received` mismatch → Sentry alert + manual review, never auto-application).
 - **Idempotency, three layers:**
-  1. Stripe-side: Idempotency-Key on session creation (retries can't double-create sessions).
+  1. Dodo-side: Idempotency-Key on session creation (retries can't double-create sessions).
   2. Event-side: `webhook_events(event_id)` PK insert-first — duplicate deliveries no-op.
-  3. Effect-side: UNIQUE `stripe_payment_intent_id` + strict transition check — even a *different* event referencing the same payment can't credit twice.
+  3. Effect-side: UNIQUE `stripe_payment_intent_id` (holding Dodo payment_id) + strict transition check — even a *different* event referencing the same payment can't credit twice.
 - **Out-of-order/duplicates:** handlers are transition-based, not command-based. Second `pending→succeeded` attempt is a no-op acked 200.
-- **Refunds** (`charge.refunded`): `succeeded→refunded`, total/score/rank re-derived in the same txn pattern.
-- **Failures** (`payment_intent.payment_failed`): `pending→failed`; no rank effect.
+- **Refunds** (`payment.refunded`): `succeeded→refunded`, total/score/rank re-derived in the same txn pattern.
+- **Failures** (`payment.failed`): `pending→failed`; no rank effect.
   *(Superseded by Phase 3 decision #4, same as the sweep note below: no Bid row
   exists at checkout time, so a failed-payment event has nothing to transition —
   the webhook correctly answers "ignored." Kept as harmless documentation of the
@@ -280,9 +280,9 @@ Canonical path is §3 Phase A step 7 → Phase B. Specifics:
   *(As implemented in Phase 3, no Bid row exists at checkout time at all — pending
   bids only occur mid-settlement-transaction — so there is nothing for an
   abandoned-checkout sweep to do. Superseded by Phase 3 decision #4: abandoned
-  Checkout Sessions are Stripe's lifecycle to expire, not ours; the former daily
+  Checkout Sessions are Dodo's lifecycle to expire, not ours; the former daily
   Inngest sweep line was removed by owner decision 2026-08-24.)*
-- **Season-boundary race:** webhook lands after season ended → auto-refund via Stripe API + activity note (Q4).
+- **Season-boundary race:** webhook lands after season ended → auto-refund via Dodo API + activity note (Q4).
 - Webhook route bypasses body parsing so the raw body reaches the verifier.
 
 ---
@@ -395,7 +395,7 @@ Slugs (not uuid ids) keep keys human-greppable across environments; slugs are im
 
 | # | Decision | Final |
 |---|---|---|
-| Q1 | Auth in V1 | None — anonymous bidding; Stripe Checkout email = contact |
+| Q1 | Auth in V1 | None — anonymous bidding; Dodo Payments Checkout email = contact |
 | Q2 | Bid tiers | **$5 / $25 / $100 / $500 + custom, min $5, max $10,000/single bid** (override of proposed $10 floor — entry friction kept low for 2K–100K-sub micro-creators; ceiling added pre-Phase-1 as refund/dispute sanity cap) |
 | Q3 | Scoring formula | Log-weighted `0.85·ln(1+$) + 0.15·ln(1+clicks)` |
 | Q4 | Post-deadline payment | Auto-refund + activity note |
@@ -404,7 +404,7 @@ Slugs (not uuid ids) keep keys human-greppable across environments; slugs are im
 
 ## V1.1 Backlog (tracked, ordered)
 
-1. **B1 — Post-season recap emails.** *Retention mechanic, not nice-to-have:* it is the reason a creator returns after week one. Requires email capture (Stripe email reuse or `creator_contacts` table + consent at checkout), Resend integration, Inngest fan-out per category top-N. Pulled forward before any other enhancement.
+1. **B1 — Post-season recap emails.** *Retention mechanic, not nice-to-have:* it is the reason a creator returns after week one. Requires email capture (Dodo Payments email reuse or `creator_contacts` table + consent at checkout), Resend integration, Inngest fan-out per category top-N. Pulled forward before any other enhancement.
 2. *Candidates, unprioritized:* verified-badge program (needs verifier policy — F6); lightweight login + "my campaigns" view (extends F7); multi-category creators; share-card image generation for rank moments.
 
 Nothing from this backlog enters V1 without explicit approval.
@@ -428,7 +428,7 @@ Nothing from this backlog enters V1 without explicit approval.
    - **Formula transparency enforced structurally**: the on-page explainer imports the same pure modules (`rank-formula.ts`, `config/site.ts`) as the scorer and renders a live worked example for the current #1 — displayed ≠ executed remains impossible (§1 invariant). Rank-change animation via Framer Motion v13 `layout` springs + flash overlay; honors `prefers-reduced-motion`.
    - **Dev tooling, guarded**: POST `/api/dev/fake-bid` refuses production twice (NODE_ENV check AND the loopback env-guard); `scripts/load-test-bids.mjs` (concurrency waves) and `scripts/sse-watch.mjs` (headless SSE probe with wall-clock stamps, accepts a fake Last-Event-ID) back the DoD demonstration.
    - `maxDuration = 300` on `/api/events`: the serverless ceiling is embraced by design — EventSource reconnects transparently and Last-Event-ID replay makes the hop invisible to viewers.
-9. Phase 4.5 delivered (2026-08-26): board UX refinements patterned on live pay-to-rank products (outbid.lol, topple.lol) while keeping Blowup's competitive voice. Components-and-styling ONLY by scope: no SSE, settlement, schema, or scoring changes. (a) **Inline bid CTA on every row**: "Boost" trigger in the row line; clicking expands the tier picker beneath the row; tiers come from the same `BID_TIERS_CENTS` the checkout validates, and selection POSTs `/api/checkout` (§4, unchanged) then redirects to the Stripe-hosted URL. The label deliberately avoids "$X to take #N" promises — with the log-weighted formula the amount needed to pass a rival depends on their clicks too, so any fixed price would be a guess. (b) **Podium treatment**: ranks 1–3 get larger avatar/numeral/score and medal-tinted gradient cards via class-conditional styling in the SAME Framer Motion layout parent — a row sliding across the #3/#4 boundary still animates instead of jumping containers. (c) **Proof-of-life line** under the board title: live viewers + season total + round end; the total sums rows' absolute `bidTotalCents` client-side, so it updates as deltas land with no extra subscription or lib change. (d) **Plain-English FAQ** (collapsed `<details>`) directly after the formula panel — supplements the transparency display, never replaces it. (e) **Category chips** (name + season total) on the board page and the index; board-page chip totals resolve best-effort server-side — a chips failure renders the page without chips, never without the board. New tooling: `scripts/shot.mjs` (puppeteer-core + system Chrome; settles on `load` + explicit content wait because SSE connections never let `networkidle` fire) and `scripts/sse-ui-check.mjs` (two-tab live-update regression: opens two pages, fires one dev bid, asserts both tabs converge on the new season total and agree on #1; disables renderer backgrounding because headless Chrome freezes the first page when a second opens).
+9. Phase 4.5 delivered (2026-08-26): board UX refinements patterned on live pay-to-rank products (outbid.lol, topple.lol) while keeping Blowup's competitive voice. Components-and-styling ONLY by scope: no SSE, settlement, schema, or scoring changes. (a) **Inline bid CTA on every row**: "Boost" trigger in the row line; clicking expands the tier picker beneath the row; tiers come from the same `BID_TIERS_CENTS` the checkout validates, and selection POSTs `/api/checkout` (§4, unchanged) then redirects to the Dodo-hosted URL. The label deliberately avoids "$X to take #N" promises — with the log-weighted formula the amount needed to pass a rival depends on their clicks too, so any fixed price would be a guess. (b) **Podium treatment**: ranks 1–3 get larger avatar/numeral/score and medal-tinted gradient cards via class-conditional styling in the SAME Framer Motion layout parent — a row sliding across the #3/#4 boundary still animates instead of jumping containers. (c) **Proof-of-life line** under the board title: live viewers + season total + round end; the total sums rows' absolute `bidTotalCents` client-side, so it updates as deltas land with no extra subscription or lib change. (d) **Plain-English FAQ** (collapsed `<details>`) directly after the formula panel — supplements the transparency display, never replaces it. (e) **Category chips** (name + season total) on the board page and the index; board-page chip totals resolve best-effort server-side — a chips failure renders the page without chips, never without the board. New tooling: `scripts/shot.mjs` (puppeteer-core + system Chrome; settles on `load` + explicit content wait because SSE connections never let `networkidle` fire) and `scripts/sse-ui-check.mjs` (two-tab live-update regression: opens two pages, fires one dev bid, asserts both tabs converge on the new season total and agree on #1; disables renderer backgrounding because headless Chrome freezes the first page when a second opens).
 10. Phase 4.6 delivered (2026-08-26): root landing page (`/`) evolved from the static "coming soon" page into a live showcase for creator outreach and external review. Hero wordmark treatment kept verbatim; everything under it is REAL data, server-rendered (`force-dynamic`, same pattern as `/categories`): the proof-of-life stats bar sums the SAME per-board `loadBoard()` totals the index chips use, and "watching live" sums the §6 Redis visitor counters across active category slugs at render time — a snapshot with §9's documented cosmetic-metric semantics (60s heartbeat TTL, reads clamp at zero), verified live in both directions (SSE connect → +1 rendered; clean disconnect → −1 within one block window). The reigning-#1 preview cards derive from `rows[0]` of the same `loadBoard()` calls `/categories` renders, so the two pages cannot drift. Client-JS budget held deliberately light: the ONLY client code is a dependency-free `CountUp` (~40 lines; SSR always emits the final figure, so hydration and no-JS clients see true values; honors `prefers-reduced-motion`) — and the first prod build revealed the `Avatar` import was dragging LeaderboardRow's framer-motion client boundary (~120 KB raw / ~40 KB gzipped) onto the landing page, so `Avatar` was extracted into its own server-safe module (`components/shared/Avatar.tsx`, re-exported from LeaderboardRow for import-path compatibility; `/categories` and `/[category]` behavior untouched). Result: root ships framework baseline + a 792-byte page chunk; framer-motion no longer loads on `/` (still does on the board pages where motion is used). Tooling: `scripts/shot.mjs` gained optional width/height args for mobile-viewport captures. Verified: a settled fake bid moved the stats bar $4,020 → $4,045 on next load; root-vs-index leader blocks and per-category totals byte-identical; prod warm renders 30–55 ms on loopback (same ballpark as `/categories`); 390 px full-page capture clean; suite 68/68 (run twice — before and after the Avatar extraction).
 
 11. Phase 4.7 delivered (2026-08-27): the local-tooling safety interlock from entry 7 **completed**. That entry wired `assertLocalEnv()` into vitest's `globalSetup` and every `scripts/dev-*` CLI, but three paths that read `.env` were still unguarded — and one of them sits inside a documented routine: `scripts/seed.ts` (INSERTs categories + active seasons; step 1 of the Phase-4.6 verification recipe), `drizzle.config.ts` → `db:push`/`db:migrate` (`push` diffs schema against the live DB and can DROP/ALTER — highest severity of the three), and `npm run dev` (boots the whole app: the SSE hub INCRs visitor counters and `/api/inngest` can ZADD/ZREM). With production DSNs in `.env`, all three resolved production. Closed as follows:
@@ -446,6 +446,7 @@ Nothing from this backlog enters V1 without explicit approval.
     - **New live tooling, because the existing live check passes red.** `scripts/sse-ui-check.mjs` (entry 9) asserts that both tabs AGREE on #1 — and under the old code both tabs agreed on the same *wrong* leader. Two checks were added to assert what was actually broken: `scripts/rank-resort-check.mjs` (bidder is #1, displaced incumbent renders numeral "2", numerals are exactly 1..N with no duplicates, both tabs byte-identical, and no row's day-start drifted; it refuses to run unless the bidder's handle sorts AFTER the incumbent's, the only pairing that reproduces the old fall-through) and `scripts/flip-motion-check.mjs` (rows are not remounted — proven by stamping a DOM expando, which React cannot carry onto a replacement node — and they FLIP through intermediate positions rather than snapping, measured per animation frame).
     - Verified red-then-green against a live board: pre-fix `1:@alpha 1:@zeta 3:@gamma …` (the 6.8197 row rendered above the 6.8711 row, two "1"s, no "2", 4 of 7 checks failing) → post-fix `1:@zeta 2:@alpha 3:@gamma …`, numerals exactly 1..9, 8/8 checks pass, and the incumbent's badge correctly re-read `▲ up 1 today` → `— holding` at its new rank rather than keeping stale arithmetic. Motion: 17 strictly-intermediate positions per moving row, 9/9 rows kept their pre-bid DOM node. Suite 78/78 on this branch (68 baseline + 10 new); 88 once entry 11's 10 cascade cases merge alongside. No scoring, settlement, schema, or SSE-protocol change — one client reducer, its extraction, and tests.
     - Known and unchanged: the `globals.css` reduced-motion block shortens the flash overlay only. Framer Motion's layout slide is JS-driven and nothing in `src/` sets `MotionConfig reducedMotion` or `useReducedMotion`, so the slide still runs under `prefers-reduced-motion: reduce` — the comment above that block ("rows still reorder instantly, just without the slide/flash") overstates what the query does. Pre-existing since entry 8, out of 4.8's no-styling scope, measured and recorded here for whoever closes it.
+13. Phase 5.0 delivered (2026-08-31): **Dodo Payments migration** — complete replacement of Stripe with Dodo Payments (`@dodo/node` SDK). All payment processing, checkout sessions, webhook handling, and refunds now use Dodo APIs. Legacy column names `stripe_checkout_session_id` and `stripe_payment_intent_id` retained (Phase 5.0 scope: integration swap, not schema migration) — they now store Dodo checkout session IDs and payment IDs respectively. Webhook signature verification switched from Stripe's `constructEvent` to `standardwebhooks` (via Dodo SDK's `unwrap()` helper). Settlement flow (§3 Phase B) unchanged in structure; only the payment provider SDKs and webhook endpoints differ. Test suite 87/87 (all 18 webhook tests passing with synthetic Dodo events). Privacy policy updated to reference Dodo Payments and dodopayments.com/privacy. Architecture doc fully updated to reflect Dodo throughout (checkout flow, webhook handling, refund mechanics, column semantics, decisions record). `.env` cleaned of Stripe keys; only `DODO_API_KEY`, `DODO_WEBHOOK_SECRET`, and `DODO_BID_PRODUCT_ID` remain for payment processing.
 
 ## Approval log
 

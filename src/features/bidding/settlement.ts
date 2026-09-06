@@ -19,39 +19,41 @@ import { publishSettlement } from '../leaderboard/events.js';
  * real money into rank. Invariants:
  *
  *  - Trust NOTHING from the client or the success-page redirect. Only events
- *    whose Stripe signature verified reach this module.
- *  - Idempotent under Stripe's at-least-once delivery. The event id gates
+ *    whose Dodo signature verified reach this module.
+ *  - Idempotent under Dodo's at-least-once delivery. The payment_id gates
  *    processing (webhook_events insert-first); processed_at distinguishes
  *      fresh     -> run the handler
  *      unproc.   -> a previous attempt CRASHED mid-flight; re-run (safe: the
  *                   bids.payment_intent unique index backstops settlement,
- *                   and refunds tolerate charge_already_refunded)
+ *                   and refunds tolerate already-refunded)
  *      processed -> true duplicate, no-op
- *  - Amount comes from Stripe (session.amount_total), never from metadata.
+ *  - Amount comes from Dodo (payment.total_amount), never from metadata.
  *  - Season resolution happens FRESH inside the money transaction. If the
  *    season the checkout targeted has ended (rolled over or none active),
  *    Q4 applies: AUTO-REFUND — never count the bid toward the wrong week.
  *  - PG commits first, Redis ZADD strictly after (ordering invariant §3).
  */
 
-/** Structural surface of `stripe.refunds` — injectable for tests. */
+/** Structural surface of refunds API — injectable for tests. */
 export interface RefundApi {
-  create(params: { payment_intent: string }): Promise<unknown>;
+  create(params: { payment_id: string }): Promise<unknown>;
 }
 
-interface SessionLike {
-  id: string;
-  payment_intent?: string | null;
-  amount_total?: number | null;
-  currency?: string | null;
-  payment_status?: string | null;
-  metadata?: Record<string, string> | null;
-}
 
+/** Dodo webhook event shape (UnwrapWebhookEvent discriminated union). */
 export interface VerifiedEventLike {
-  id: string;
   type: string;
-  data: { object: unknown };
+  business_id: string;
+  timestamp: string;
+  data: unknown;
+}
+
+/** Payment fields we extract from Dodo's Payment object in webhook data. */
+interface PaymentLike {
+  payment_id: string;
+  checkout_session_id?: string | null;
+  total_amount: number;
+  metadata?: Record<string, string> | null;
 }
 
 export type SettlementOutcome =
@@ -83,11 +85,13 @@ function isAlreadyRefunded(err: unknown): boolean {
  * Insert-first claim. Returns whether this delivery should run the handler:
  * fresh inserts and unprocessed leftovers (crashed attempts) both proceed;
  * only fully processed events are duplicates.
+ *
+ * For Dodo: payment_id is the idempotency key (replaces Stripe's event.id).
  */
-async function claimEvent(event: VerifiedEventLike): Promise<boolean> {
+async function claimEvent(paymentId: string, eventType: string): Promise<boolean> {
   const inserted = await db
     .insert(webhookEvents)
-    .values({ id: event.id, type: event.type })
+    .values({ id: paymentId, type: eventType })
     .onConflictDoNothing()
     .returning({ id: webhookEvents.id });
   if (inserted.length > 0) return true;
@@ -95,99 +99,111 @@ async function claimEvent(event: VerifiedEventLike): Promise<boolean> {
   const [existing] = await db
     .select({ processedAt: webhookEvents.processedAt })
     .from(webhookEvents)
-    .where(eq(webhookEvents.id, event.id));
+    .where(eq(webhookEvents.id, paymentId));
   return existing?.processedAt == null;
 }
 
-async function markProcessed(eventId: string): Promise<void> {
+async function markProcessed(paymentId: string): Promise<void> {
   await db
     .update(webhookEvents)
     .set({ processedAt: new Date() })
-    .where(eq(webhookEvents.id, eventId));
+    .where(eq(webhookEvents.id, paymentId));
 }
 
-function markProcessedInTx(tx: Tx, eventId: string): Promise<void> {
+function markProcessedInTx(tx: Tx, paymentId: string): Promise<void> {
   return tx
     .update(webhookEvents)
     .set({ processedAt: new Date() })
-    .where(eq(webhookEvents.id, eventId))
+    .where(eq(webhookEvents.id, paymentId))
     .then(() => undefined);
 }
 
 /**
- * Full refund via Stripe, tolerating redelivery after a crash between refund
- * and bookkeeping (a second full refund raises charge_already_refunded).
+ * Full refund via Dodo, tolerating redelivery after a crash between refund
+ * and bookkeeping (a second full refund on an already-refunded payment may error).
  */
 async function refundOrTolerate(
   refunds: RefundApi | undefined,
-  paymentIntentId: string,
+  paymentId: string,
 ): Promise<void> {
   if (!refunds) {
     throw new Error(
-      'refund required but no Stripe client available (STRIPE_SECRET_KEY unset?)',
+      'refund required but no Dodo client available (DODO_API_KEY unset?)',
     );
   }
   try {
-    await refunds.create({ payment_intent: paymentIntentId });
+    await refunds.create({ payment_id: paymentId });
   } catch (err) {
     if (!isAlreadyRefunded(err)) throw err;
   }
 }
 
 /**
- * Process one signature-verified Stripe event. Returns a discriminable
+ * Process one signature-verified Dodo webhook event. Returns a discriminable
  * outcome; throws only on infrastructure errors (the route turns those into
- * 500 so Stripe retries — every path here is safe to re-run).
+ * 500 so Dodo retries — every path here is safe to re-run).
+ *
+ * Event mapping (Dodo → Blowup outcome):
+ *  - payment.succeeded → settle the bid
+ *  - payment.failed → async_payment_failed
+ *  - payment.cancelled → ignored
+ *  - payment.processing → awaiting_payment
  */
 export async function processVerifiedEvent(
   event: VerifiedEventLike,
   refunds?: RefundApi,
 ): Promise<SettlementOutcome> {
-  if (!(await claimEvent(event))) return { kind: 'duplicate_event' };
+  const payment = event.data as any; // Cast to access fields since data union is complex
+  const paymentId = payment.payment_id;
 
-  const session = event.data.object as SessionLike;
+  if (!paymentId) {
+    // Ignore events that don't have a payment_id (like non-payment events)
+    return { kind: 'ignored', eventType: event.type };
+  }
+
+  if (!(await claimEvent(paymentId, event.type))) return { kind: 'duplicate_event' };
 
   switch (event.type) {
-    case 'checkout.session.async_payment_failed':
-      await markProcessed(event.id);
-      return { kind: 'async_payment_failed', sessionId: session.id };
+    case 'payment.failed':
+      await markProcessed(paymentId);
+      return { kind: 'async_payment_failed', sessionId: payment.checkout_session_id ?? paymentId };
 
-    case 'checkout.session.completed':
-      // Delayed-notification methods arrive 'unpaid' here; their outcome shows
-      // up later as async_payment_succeeded/failed. Never settle unpaid.
-      if ((session.payment_status ?? 'unpaid') === 'unpaid') {
-        await markProcessed(event.id);
-        return { kind: 'awaiting_payment', sessionId: session.id };
-      }
-      return settleSession(event.id, session, refunds);
+    case 'payment.processing':
+      await markProcessed(paymentId);
+      return { kind: 'awaiting_payment', sessionId: payment.checkout_session_id ?? paymentId };
 
-    case 'checkout.session.async_payment_succeeded':
-      return settleSession(event.id, session, refunds);
+    case 'payment.cancelled':
+      await markProcessed(paymentId);
+      return { kind: 'ignored', eventType: event.type };
+
+    case 'payment.succeeded':
+      return settlePayment(paymentId, payment, refunds);
 
     default:
-      await markProcessed(event.id);
+      await markProcessed(paymentId);
       return { kind: 'ignored', eventType: event.type };
   }
 }
 
-async function settleSession(
-  eventId: string,
-  session: SessionLike,
+async function settlePayment(
+  paymentId: string,
+  payment: unknown,
   refunds?: RefundApi,
 ): Promise<SettlementOutcome> {
-  const meta = session.metadata ?? {};
+  const p = payment as PaymentLike;
+  const meta = p.metadata ?? {};
   const slug = meta.categorySlug ?? '';
   const handle = meta.handle ?? '';
   const name = meta.name || undefined;
   const intendedSeasonId = meta.seasonId ?? '';
-  const paymentIntentId = session.payment_intent ?? null;
-  const amountCents = session.amount_total ?? null;
+  const checkoutSessionId = p.checkout_session_id ?? null;
+  const amountCents = p.total_amount;
 
   // Structural validation of a VERIFIED event. Anything unattributable must
   // not silently keep money: refund what we can identify, drop what we can't.
   const structurallyInvalid =
-    !paymentIntentId ||
-    !session.id ||
+    !paymentId ||
+    !checkoutSessionId ||
     typeof amountCents !== 'number' ||
     !slug ||
     !handle ||
@@ -196,14 +212,14 @@ async function settleSession(
     try {
       assertBidAmount(amountCents as number);
     } catch {
-      return refundUnattributable(eventId, refunds, paymentIntentId, 'amount_out_of_bounds');
+      return refundUnattributable(paymentId, refunds, paymentId, 'amount_out_of_bounds');
     }
   }
   if (structurallyInvalid) {
     return refundUnattributable(
-      eventId,
+      paymentId,
       refunds,
-      paymentIntentId,
+      paymentId,
       'missing_metadata_or_fields',
     );
   }
@@ -253,8 +269,8 @@ async function settleSession(
           campaignId: campaign.id,
           amountCents: amountCents as number,
           payment: {
-            checkoutSessionId: session.id,
-            paymentIntentId: paymentIntentId!,
+            checkoutSessionId: checkoutSessionId!,
+            paymentIntentId: paymentId, // payment_id is the new payment_intent equivalent
             bornPending: true,
           },
         },
@@ -262,19 +278,19 @@ async function settleSession(
       );
 
       // Atomic with the settlement: settled implies processed.
-      await markProcessedInTx(tx, eventId);
+      await markProcessedInTx(tx, paymentId);
       return { result, slug: active.slug };
     });
   } catch (err) {
     if (err instanceof Q4Refund) {
-      await refundOrTolerate(refunds, paymentIntentId!);
-      await markProcessed(eventId);
-      return { kind: 'refunded', reason: err.reason, paymentIntentId };
+      await refundOrTolerate(refunds, paymentId);
+      await markProcessed(paymentId);
+      return { kind: 'refunded', reason: err.reason, paymentIntentId: paymentId };
     }
     if (isUniqueViolation(err)) {
-      // Same PaymentIntent under a different event id: already settled once.
-      await markProcessed(eventId);
-      return { kind: 'duplicate_settlement', paymentIntentId: paymentIntentId! };
+      // Same payment_id under a different delivery: already settled once.
+      await markProcessed(paymentId);
+      return { kind: 'duplicate_settlement', paymentIntentId: paymentId };
     }
     throw err;
   }

@@ -1,0 +1,814 @@
+<title>Blowup Privacy Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap">
+
+<style>
+  /* ── Token system ─────────────────────────────────────────────────── */
+  :root {
+    --bg:          #FAFAFA;
+    --bg-alt:      #F4F4F5;
+    --fg:          #18181B;
+    --fg-muted:    #52525B;
+    --fg-subtle:   #A1A1AA;
+    --border:      #E4E4E7;
+    --accent:      #FF3B00;
+    --callout-bg:  #FFF5F2;
+    --callout-border: #FF3B00;
+    --toc-bg:      rgba(250,250,250,0.92);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #0A0A0B;
+      --bg-alt:      #111113;
+      --fg:          #F4F4F5;
+      --fg-muted:    #A1A1AA;
+      --fg-subtle:   #52525B;
+      --border:      #27272A;
+      --accent:      #FF4A1A;
+      --callout-bg:  #1A0800;
+      --callout-border: #FF4A1A;
+      --toc-bg:      rgba(10,10,11,0.92);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:          #0A0A0B;
+    --bg-alt:      #111113;
+    --fg:          #F4F4F5;
+    --fg-muted:    #A1A1AA;
+    --fg-subtle:   #52525B;
+    --border:      #27272A;
+    --accent:      #FF4A1A;
+    --callout-bg:  #1A0800;
+    --callout-border: #FF4A1A;
+    --toc-bg:      rgba(10,10,11,0.92);
+  }
+
+  /* ── Reset & base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.75;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────────────── */
+  .page-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+
+  @media (min-width: 900px) {
+    .page-wrap {
+      grid-template-columns: 220px 1fr;
+      gap: 0 4rem;
+      align-items: start;
+      padding: 0 2.5rem;
+    }
+  }
+
+  /* ── Site header ──────────────────────────────────────────────────── */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  @media (min-width: 900px) {
+    .site-header { padding: 1.5rem 2.5rem; }
+  }
+
+  .logo {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-meta {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+
+  /* ── TOC sidebar ──────────────────────────────────────────────────── */
+  .toc {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .toc {
+      display: block;
+      position: sticky;
+      top: 2rem;
+      padding: 2rem 0;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+    }
+  }
+
+  .toc-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+    margin-bottom: 1rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .toc-list li + li { margin-top: 0.125rem; }
+
+  .toc-list a {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 0.3125rem 0.625rem;
+    border-radius: 4px;
+    line-height: 1.4;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .toc-list a:hover,
+  .toc-list a:focus-visible {
+    color: var(--fg);
+    background: var(--bg-alt);
+    outline: none;
+  }
+
+  /* ── Main content ─────────────────────────────────────────────────── */
+  .content {
+    padding: 2.5rem 0 5rem;
+    min-width: 0;
+  }
+
+  /* ── Page title block ─────────────────────────────────────────────── */
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .doc-title {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(2.25rem, 5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+  }
+
+  .doc-meta {
+    font-size: 0.8125rem;
+    color: var(--fg-subtle);
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+  }
+
+  /* ── Sections ─────────────────────────────────────────────────────── */
+  .section {
+    margin-top: 3rem;
+  }
+
+  .section:first-of-type {
+    margin-top: 0;
+  }
+
+  .section-heading {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.3125rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    margin: 0 0 1rem;
+    text-wrap: balance;
+    scroll-margin-top: 2rem;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    max-width: 65ch;
+    color: var(--fg);
+  }
+
+  p:last-child { margin-bottom: 0; }
+
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* ── Data table ───────────────────────────────────────────────────── */
+  .data-table-wrap {
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .data-table th {
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+    padding: 0.75rem 1rem;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .data-table td:first-child {
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--fg);
+  }
+
+  /* ── Callout ──────────────────────────────────────────────────────── */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 3px solid var(--callout-border);
+    border-radius: 0 6px 6px 0;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    max-width: 65ch;
+  }
+
+  .callout-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.375rem;
+  }
+
+  .callout p {
+    font-size: 0.9375rem;
+    margin: 0;
+    color: var(--fg);
+  }
+
+  /* ── List ─────────────────────────────────────────────────────────── */
+  ul {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+    max-width: 65ch;
+  }
+
+  li {
+    margin-bottom: 0.375rem;
+    color: var(--fg);
+    font-size: 1rem;
+  }
+
+  ul ul {
+    margin-top: 0.375rem;
+    margin-bottom: 0;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────────── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── Contact block ────────────────────────────────────────────────── */
+  .contact-block {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.25rem;
+    max-width: 65ch;
+    font-size: 0.9375rem;
+  }
+
+  .contact-block p { color: var(--fg); margin: 0 0 0.25rem; }
+  .contact-block p:last-child { margin: 0; }
+
+  /* ── Footer ───────────────────────────────────────────────────────── */
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 1.25rem;
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+
+  @media (min-width: 900px) {
+    .site-footer { padding: 2rem 2.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+
+<!-- Site header -->
+<header class="site-header">
+  <a href="/" class="logo">BLOWUP<span>.</span></a>
+  <span class="header-meta">Legal</span>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Table of contents (desktop sticky) -->
+  <nav class="toc" aria-label="On this page">
+    <p class="toc-label">On this page</p>
+    <ol class="toc-list">
+      <li><a href="#responsible">1. Who's responsible</a></li>
+      <li><a href="#collect">2. What we collect</a></li>
+      <li><a href="#cookies">3. Cookies</a></li>
+      <li><a href="#why">4. Why we use it</a></li>
+      <li><a href="#public">5. Public listing data</a></li>
+      <li><a href="#sharing">6. Who we share with</a></li>
+      <li><a href="#retention">7. Data retention</a></li>
+      <li><a href="#rights">8. Your rights</a></li>
+      <li><a href="#children">9. Children's privacy</a></li>
+      <li><a href="#changes">10. Changes</a></li>
+    </ol>
+  </nav>
+
+  <!-- Main document -->
+  <main class="content" id="main">
+
+    <p class="doc-eyebrow">Privacy Policy</p>
+    <h1 class="doc-title">How Blowup handles your data</h1>
+    <p class="doc-meta">
+      Effective date: 30 August 2026 &nbsp;·&nbsp; blowup.lol
+    </p>
+
+    <!-- 1. Who's responsible -->
+    <section class="section" id="responsible" aria-labelledby="h-responsible">
+      <h2 class="section-heading" id="h-responsible">1. Who's responsible</h2>
+      <p>
+        Blowup (<em>blowup.lol</em>) is operated by an individual based in India —
+        not a registered company or registered entity of any kind at this stage.
+        "We", "us", and "our" throughout this policy refer to that individual
+        operator.
+      </p>
+      <p>
+        If you have any questions about this policy or about how your data is
+        handled, you can reach us at the contact details in
+        <a href="#rights">Section 8</a>.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 2. What we collect -->
+    <section class="section" id="collect" aria-labelledby="h-collect">
+      <h2 class="section-heading" id="h-collect">2. What we collect</h2>
+
+      <p>
+        Everything below reflects our actual architecture. We describe each
+        piece of data, where it goes, and — crucially — what we deliberately
+        choose <em>not</em> to store.
+      </p>
+
+      <h3 style="font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; color:var(--fg);">
+        Click deduplication (session hashing)
+      </h3>
+      <p>
+        When someone clicks through to a YouTube creator via Blowup, we count
+        that click uniquely — one counted click per viewer per creator campaign,
+        per day. To do this without identifying individuals, we compute a
+        <strong>session hash</strong>: a one-way HMAC of your IP address, your
+        browser's user-agent string, and a daily salt that rotates every 24 hours.
+      </p>
+
+      <div class="callout">
+        <p class="callout-label">Privacy-by-design detail</p>
+        <p>
+          We store only the resulting hash — a pseudonymous fingerprint — never
+          the raw IP address itself. The daily salt means hashes computed
+          yesterday cannot be linked to hashes computed today. Once the salt
+          rotates, the original inputs are unrecoverable from what we stored.
+        </p>
+      </div>
+
+      <p>
+        The session hash is stored in our database alongside the click record.
+        It is used solely to prevent duplicate click counting; it is never used
+        for advertising, cross-site tracking, or profiling.
+      </p>
+
+      <h3 style="font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; color:var(--fg);">
+        Checkout and bid data
+      </h3>
+      <p>
+        When you submit a bid through the claim form or the board, we collect
+        and store:
+      </p>
+      <ul>
+        <li>Your YouTube channel handle or channel URL</li>
+        <li>The category you are bidding in (Tech, Gaming, or Education)</li>
+        <li>Your bid amount</li>
+        <li>
+          YouTube channel metadata resolved via the YouTube Data API: channel ID
+          (<code>UC…</code>), display handle, channel name, avatar URL, and
+          subscriber count. This is fetched from YouTube's public API and cached
+          for 24 hours.
+        </li>
+        <li>
+          Internal identifiers linking your bid to the current week's season and
+          your campaign record
+        </li>
+        <li>Payment confirmation identifiers provided by Stripe after a
+          successful payment (see below)
+        </li>
+      </ul>
+
+      <h3 style="font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; color:var(--fg);">
+        Payment data
+      </h3>
+      <p>
+        Payments are processed directly by <strong>Stripe</strong>. We do not
+        collect, see, or store your card number, bank details, or any raw
+        payment credentials. Stripe handles the checkout page, payment
+        processing, and PCI compliance on our behalf.
+      </p>
+      <p>
+        What we receive from Stripe after a successful payment: a checkout
+        session ID and a payment intent ID, used only for idempotency (ensuring
+        the same payment cannot credit a bid twice) and for audit records. Stripe
+        separately collects the email address you provide at checkout — that email
+        goes to Stripe, not to us, and is subject to
+        <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's own privacy policy</a>.
+      </p>
+
+      <h3 style="font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; color:var(--fg);">
+        Analytics and error tracking
+      </h3>
+      <p>
+        At the time of writing, Blowup does not use any third-party analytics
+        service (no PostHog, no Google Analytics, no Plausible, or equivalent).
+        We do not currently use a third-party error tracking service (no Sentry
+        or equivalent). If this changes, this policy will be updated before any
+        such service is deployed.
+      </p>
+      <p>
+        Vercel, our hosting provider, may log standard request metadata
+        (including IP addresses and user-agent strings) for operational purposes
+        at the infrastructure level. This is governed by
+        <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel's privacy policy</a>.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 3. Cookies -->
+    <section class="section" id="cookies" aria-labelledby="h-cookies">
+      <h2 class="section-heading" id="h-cookies">3. Cookies</h2>
+      <p>
+        Blowup does not set any first-party cookies. The site is fully anonymous
+        — there is no login, no user account, and no session token stored in
+        your browser.
+      </p>
+      <p>
+        Stripe sets cookies during the Stripe-hosted checkout flow (on Stripe's
+        own domain, not on blowup.lol). These are Stripe's cookies and are
+        governed by Stripe's privacy policy. Once you return to blowup.lol, no
+        Stripe cookies persist on our domain.
+      </p>
+      <p>
+        Your browser may cache standard HTTP assets (fonts, page resources) per
+        normal web behaviour, but this is not tracking.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 4. Why we use it -->
+    <section class="section" id="why" aria-labelledby="h-why">
+      <h2 class="section-heading" id="h-why">4. Why we use this data</h2>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Purpose</th>
+              <th>Legal basis (GDPR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Handle, channel metadata, bid amount, category</td>
+              <td>Running the bid, computing your score and rank, displaying your listing on the public leaderboard</td>
+              <td>Contract performance — you submit this data specifically to participate</td>
+            </tr>
+            <tr>
+              <td>Stripe payment identifiers</td>
+              <td>Confirming payment, preventing duplicate credits, maintaining financial audit records</td>
+              <td>Contract performance; legal obligation (financial record-keeping)</td>
+            </tr>
+            <tr>
+              <td>Session hash (click deduplication)</td>
+              <td>Counting unique clicks on creator listings fairly and preventing click inflation</td>
+              <td>Legitimate interest — fair operation of the ranking system, which all participants rely on</td>
+            </tr>
+            <tr>
+              <td>YouTube channel metadata</td>
+              <td>Verifying the channel exists, resolving the public handle and avatar used on the leaderboard</td>
+              <td>Contract performance</td>
+            </tr>
+            <tr>
+              <td>Referrer URL (click records)</td>
+              <td>Understanding where traffic originates (stored as a nullable field, not required)</td>
+              <td>Legitimate interest — traffic source visibility for operators</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 5. Public listing data -->
+    <section class="section" id="public" aria-labelledby="h-public">
+      <h2 class="section-heading" id="h-public">5. Public listing data</h2>
+      <p>
+        Participation in Blowup is an act of public competition. By placing a
+        bid, you agree that the following data about your listing will be
+        displayed publicly on the leaderboard — to anyone who visits the site,
+        without any login requirement:
+      </p>
+      <ul>
+        <li>Your YouTube handle and channel name</li>
+        <li>Your avatar (as resolved from the YouTube Data API)</li>
+        <li>Your current rank and score in the category</li>
+        <li>Your cumulative bid total for the current season (in dollars)</li>
+        <li>Your unique click count for the current season</li>
+        <li>Your rank history and season results, which are retained permanently as part of the public leaderboard archive</li>
+      </ul>
+      <p>
+        If you do not want this information to be public, do not place a bid.
+        There is no private participation mode.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 6. Who we share with -->
+    <section class="section" id="sharing" aria-labelledby="h-sharing">
+      <h2 class="section-heading" id="h-sharing">6. Who we share data with</h2>
+      <p>
+        We use a small number of third-party services to operate Blowup. These
+        are the only vendors who receive any of your data:
+      </p>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Role</th>
+              <th>Data they receive</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Stripe</td>
+              <td>Payment processing</td>
+              <td>All data you enter on the Stripe-hosted checkout page (card details, email). We do not see this data; Stripe processes it directly and returns payment confirmation to us.</td>
+            </tr>
+            <tr>
+              <td>Neon</td>
+              <td>Postgres database hosting</td>
+              <td>All structured data we store: creator records, bids, campaigns, click hashes, season data. Neon hosts our database; they do not access or use this data independently of providing the database service.</td>
+            </tr>
+            <tr>
+              <td>Upstash</td>
+              <td>Redis (leaderboard cache &amp; rate limiting)</td>
+              <td>Leaderboard scores, season pointers, click deduplication keys (session hash + campaign ID), rate-limit buckets, visitor counters. These are operational projections of the main database, not personal data in isolation. Upstash does not access or use this data independently.</td>
+            </tr>
+            <tr>
+              <td>Vercel</td>
+              <td>Application hosting &amp; CDN</td>
+              <td>All HTTP requests to blowup.lol pass through Vercel's infrastructure. Vercel logs standard request data (IP address, headers, timestamps) at the infrastructure level per their own data processing terms.</td>
+            </tr>
+            <tr>
+              <td>Google (YouTube Data API)</td>
+              <td>Creator metadata resolution</td>
+              <td>When you submit a channel handle, we query YouTube's public Data API with that handle to resolve channel metadata. The handle is sent to Google's API. This is public YouTube data; we do not send any personal information beyond the handle you provided.</td>
+            </tr>
+            <tr>
+              <td>Inngest</td>
+              <td>Background job scheduling</td>
+              <td>Inngest orchestrates our background jobs (weekly season rollover, leaderboard reconciliation, creator enrichment). These jobs read and write our own database; Inngest receives job event payloads, which may include internal identifiers (season IDs, creator IDs) but not personal data.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        We do not sell your data. We do not share your data with advertisers,
+        data brokers, or any party not listed above.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 7. Retention -->
+    <section class="section" id="retention" aria-labelledby="h-retention">
+      <h2 class="section-heading" id="h-retention">7. Data retention</h2>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Data type</th>
+              <th>Retention</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Creator profiles (handle, avatar, channel metadata)</td>
+              <td>Retained indefinitely — they form the public leaderboard archive. YouTube metadata is refreshed from the YouTube API periodically; the stored record may lag the live channel by up to 24 hours.</td>
+            </tr>
+            <tr>
+              <td>Season results and bid history</td>
+              <td>Retained permanently. Season results are the historical record of competition outcomes and are immutable by design.</td>
+            </tr>
+            <tr>
+              <td>Bid records (including Stripe session ID and payment intent ID)</td>
+              <td>Retained indefinitely for financial audit purposes.</td>
+            </tr>
+            <tr>
+              <td>Click records (session hash, referrer, timestamp)</td>
+              <td>Retained in the database. The click deduplication key in Redis (session hash + campaign ID) expires automatically after 24 hours. The underlying raw click row in Postgres is retained.</td>
+            </tr>
+            <tr>
+              <td>Leaderboard Redis cache</td>
+              <td>Active leaderboard keys expire 35 days after the season ends. This is a cache — the source of truth is Postgres and is unaffected by cache expiry.</td>
+            </tr>
+            <tr>
+              <td>Stripe-side payment data</td>
+              <td>Governed by Stripe's data retention policy, not ours.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        If you want us to delete data associated with your YouTube handle, see
+        <a href="#rights">Section 8</a>. Note that publicly visible season
+        results may be retained even after deletion of other records, as they
+        constitute a historical record of the competition.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 8. Rights -->
+    <section class="section" id="rights" aria-labelledby="h-rights">
+      <h2 class="section-heading" id="h-rights">8. Your rights</h2>
+      <p>
+        If you are located in the European Economic Area, the United Kingdom, or
+        another jurisdiction with data protection rights, you have the following
+        rights regarding your personal data:
+      </p>
+      <ul>
+        <li><strong>Access</strong> — you can ask us what data we hold about your YouTube handle.</li>
+        <li><strong>Rectification</strong> — you can ask us to correct inaccurate information.</li>
+        <li><strong>Erasure</strong> — you can ask us to delete your data, subject to our legal obligations (we may need to retain financial records).</li>
+        <li><strong>Restriction</strong> — you can ask us to restrict processing of your data while a dispute is resolved.</li>
+        <li><strong>Portability</strong> — you can ask us to provide your data in a structured, machine-readable format.</li>
+        <li><strong>Objection</strong> — you can object to processing based on legitimate interest. In practice this effectively means requesting removal from the service.</li>
+        <li><strong>Withdraw consent</strong> — where processing relies on consent, you can withdraw it. Note that most of our processing is based on contract or legitimate interest, not consent.</li>
+      </ul>
+      <p>
+        Because there is no account or login, we identify data associated with
+        you by your YouTube channel handle or channel ID. Please include these
+        in any request so we can locate your records accurately.
+      </p>
+      <p>
+        To exercise any of these rights, or to ask any question about privacy at
+        Blowup, contact us:
+      </p>
+
+      <div class="contact-block">
+        <p><strong>Blowup</strong></p>
+        <p>Individual operator, India</p>
+        <p>
+          Email: <a href="mailto:privacy@blowup.lol">privacy@blowup.lol</a>
+        </p>
+        <p style="margin-top:0.625rem; font-size:0.8125rem; color:var(--fg-muted);">
+          We will respond to valid requests within 30 days. Requests that require
+          significant effort may take up to 90 days with notice.
+        </p>
+      </div>
+
+      <p style="margin-top:1.25rem;">
+        You also have the right to lodge a complaint with your local data
+        protection authority if you believe we have not handled your data in
+        accordance with applicable law.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 9. Children -->
+    <section class="section" id="children" aria-labelledby="h-children">
+      <h2 class="section-heading" id="h-children">9. Children's privacy</h2>
+      <p>
+        Blowup is intended for adults and for YouTube creators who are at least
+        18 years old. We do not knowingly collect personal information from
+        anyone under 18. If you believe a person under 18 has submitted data
+        through Blowup, please contact us at
+        <a href="mailto:privacy@blowup.lol">privacy@blowup.lol</a> and we will
+        delete those records.
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 10. Changes -->
+    <section class="section" id="changes" aria-labelledby="h-changes">
+      <h2 class="section-heading" id="h-changes">10. Changes to this policy</h2>
+      <p>
+        We will update this policy if our data practices change — particularly
+        before introducing any new analytics or error tracking service, or any
+        new vendor. The effective date at the top of this page will reflect the
+        date of the most recent update.
+      </p>
+      <p>
+        For material changes that affect data already collected, we will make a
+        reasonable effort to notify affected users where we have a means to do
+        so (for example, via an announcement at the top of the site).
+      </p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  blowup.lol &nbsp;·&nbsp; Privacy Policy &nbsp;·&nbsp; Effective 30 August 2026
+</footer>
