@@ -14,7 +14,7 @@ import { CheckoutStatusBanner } from '../../components/shared/CheckoutStatusBann
  * Phase 4.3: adds the self-serve claim form (ClaimForm) and checkout status
  * banner (CheckoutStatusBanner). searchParams is accepted per Next.js 16
  * App Router convention so the root page reads ?checkout=success/cancelled
- * from Stripe's redirect-back URLs.
+ * from Dodo Payments' redirect-back URLs.
  */
 
 export const dynamic = 'force-dynamic';
@@ -136,7 +136,7 @@ export default async function Home({
       </section>
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-20 pt-16 sm:px-6">
-        {/* Checkout status banner — shown on redirect back from Stripe */}
+        {/* Checkout status banner — shown on redirect back from Dodo Payments */}
         {checkoutStatus && (
           <div className="mb-8">
             <CheckoutStatusBanner status={checkoutStatus} />
@@ -267,12 +267,32 @@ export default async function Home({
 
         <footer className="mt-14 flex flex-col items-center gap-2 text-center text-xs uppercase tracking-widest text-zinc-600">
           <span>blowup.lol</span>
-          <Link
-            href="/privacy"
-            className="text-zinc-600 transition-colors hover:text-zinc-400"
-          >
-            Privacy Policy
-          </Link>
+          <nav className="flex items-center gap-3">
+            <Link
+              href="/privacy"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Privacy Policy
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link
+              href="/terms"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Terms of Service
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link
+              href="/refund-policy"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Refund Policy
+            </Link>
+          </nav>
         </footer>
       </div>
     </main>

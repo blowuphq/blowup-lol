@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 /**
  * Checkout status banner (Phase 4.3): shown on the root `/` page when
- * Stripe redirects back after a completed or cancelled checkout. The
+ * Dodo Payments redirects back after a completed or cancelled checkout. The
  * success_url and cancel_url in checkout.ts both point to `/?checkout=...`
  * — this component reads that param (passed down as a prop from the RSC)
  * and renders a one-line contextual strip. Dismiss is a Link to `/` which

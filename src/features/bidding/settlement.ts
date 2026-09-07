@@ -86,7 +86,7 @@ function isAlreadyRefunded(err: unknown): boolean {
  * fresh inserts and unprocessed leftovers (crashed attempts) both proceed;
  * only fully processed events are duplicates.
  *
- * For Dodo: payment_id is the idempotency key (replaces Stripe's event.id).
+ * For Dodo: payment_id is the idempotency key (replaces the prior provider's event.id).
  */
 async function claimEvent(paymentId: string, eventType: string): Promise<boolean> {
   const inserted = await db
@@ -270,7 +270,7 @@ async function settlePayment(
           amountCents: amountCents as number,
           payment: {
             checkoutSessionId: checkoutSessionId!,
-            paymentIntentId: paymentId, // payment_id is the new payment_intent equivalent
+            paymentId: paymentId, // payment_id is the new payment_intent equivalent
             bornPending: true,
           },
         },

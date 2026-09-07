@@ -135,10 +135,9 @@ export const bids = pgTable(
       .references(() => seasons.id, { onDelete: 'restrict' }),
     amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
     currency: char('currency', { length: 3 }).notNull().default('USD'),
-    // Idempotent settlement fields — named for Stripe originally, now
-    // containing Dodo's session_id and payment_id respectively.
-    stripeCheckoutSessionId: text('stripe_checkout_session_id'),
-    stripePaymentIntentId: text('stripe_payment_intent_id'),
+    // Idempotent settlement fields — contain Dodo's session_id and payment_id.
+    dodoCheckoutSessionId: text('dodo_checkout_session_id'),
+    dodoPaymentId: text('dodo_payment_id'),
     paymentStatus: bidPaymentStatusEnum('payment_status').notNull().default('pending'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true }),
@@ -147,7 +146,7 @@ export const bids = pgTable(
     check('bids_amount_range_check', sql`${t.amountCents} between 500 and 1000000`),
     // Idempotency anchor: duplicate webhook events cannot credit twice. Multiple NULLs allowed
     // (pending bids have no payment ID yet).
-    uniqueIndex('bids_payment_intent_unique').on(t.stripePaymentIntentId),
+    uniqueIndex('bids_payment_id_unique').on(t.dodoPaymentId),
     index('bids_campaign_idx').on(t.campaignId),
     index('bids_created_at_idx').on(t.createdAt.desc()),
     index('bids_pending_idx')

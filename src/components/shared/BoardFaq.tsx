@@ -18,7 +18,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is this real money?',
-    a: 'Yes. Boosts run through Stripe’s secure checkout, and only settled payments move ranks — no phantom bids.',
+    a: 'Yes. Boosts run through Dodo Payments’ secure checkout, and only settled payments move ranks — no phantom bids.',
   },
 ];
 

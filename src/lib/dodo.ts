@@ -1,7 +1,7 @@
 import DodoPayments from 'dodopayments';
 
 /**
- * Dodo Payments client access. Two flavors, same pattern as the prior Stripe client:
+ * Dodo Payments client access. Two flavors:
  *
  *  - Webhook VERIFICATION uses the SDK's unwrap() helper which wraps standardwebhooks.
  *  - Session CREATION and REFUNDS need an API key. getDodo() throws if unset;
@@ -22,17 +22,6 @@ export function tryGetDodo(): DodoPayments | null {
   const environment = (process.env.DODO_ENVIRONMENT as 'test_mode' | 'live_mode') ??
     (process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode');
 
-  // Debug: log environment selection (only in production to avoid noise)
-  if (process.env.NODE_ENV === 'production') {
-    console.log('[dodo] Environment selection:', {
-      DODO_ENVIRONMENT: process.env.DODO_ENVIRONMENT,
-      NODE_ENV: process.env.NODE_ENV,
-      selectedEnvironment: environment,
-      cachedEnv,
-      keyPrefix: key.slice(0, 8),
-    });
-  }
-
   // Recreate client if environment changed (handles env var updates between invocations)
   if (!cached || cachedEnv !== environment) {
     cached = new DodoPayments({
@@ -51,12 +40,4 @@ export function getDodo(): DodoPayments {
     throw new Error('DODO_API_KEY is not set — cannot call the Dodo API');
   }
   return client;
-}
-
-export function getDodoConfig(): { environment: string; keyPrefix: string } | null {
-  const key = process.env.DODO_API_KEY;
-  if (!key) return null;
-  const environment = (process.env.DODO_ENVIRONMENT as 'test_mode' | 'live_mode') ??
-    (process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode');
-  return { environment, keyPrefix: key.slice(0, 8) };
 }

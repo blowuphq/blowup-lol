@@ -5,7 +5,7 @@
 --   * The ONLY permitted mutation is the payment_status lifecycle:
 --       pending → succeeded | failed ;  succeeded → refunded
 --     status_updated_at is stamped automatically on any legal transition.
--- Stripe ids (checkout session / payment intent) may be filled in later — they are
+-- Dodo ids (checkout session / payment) may be filled in later — they are
 -- lifecycle bookkeeping, not financial history.
 
 CREATE OR REPLACE FUNCTION bids_enforce_append_only() RETURNS trigger AS $$

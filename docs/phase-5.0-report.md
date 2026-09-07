@@ -74,12 +74,11 @@ const session = await getDodo().checkout.sessions.create({
 Three surgical changes to the settlement pipeline:
 
 1. **Field name mapping:**  
-   Dodo's webhook payload uses `payment_id` and `checkout_session_id` where Stripe used `payment_intent.id` and `id`. Added comments clarifying the schema columns `stripe_checkout_session_id` and `stripe_payment_intent_id` now hold Dodo's equivalents:
+   Dodo's webhook payload uses `payment_id` and `checkout_session_id` where Stripe used `payment_intent.id` and `id`. Schema columns renamed to `dodo_checkout_session_id` and `dodo_payment_id`:
    ```typescript
-   // Idempotent settlement fields — named for Stripe originally, now
-   // containing Dodo's session_id and payment_id respectively.
-   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
-   stripePaymentIntentId: text('stripe_payment_intent_id'),
+   // Idempotent settlement fields — contain Dodo's session_id and payment_id.
+   dodoCheckoutSessionId: text('dodo_checkout_session_id'),
+   dodoPaymentId: text('dodo_payment_id'),
    ```
 
 2. **Idempotency key:**  
@@ -156,17 +155,14 @@ Stripe constants remain (not deleted yet).
 ### **Database Schema**
 
 #### `src/db/schema.ts` (modified)
-Updated comments on the settlement columns to reflect their new purpose:
+Schema columns renamed to reflect Dodo IDs:
 ```typescript
-// Idempotent settlement fields — named for Stripe originally, now
-// containing Dodo's session_id and payment_id respectively.
-stripeCheckoutSessionId: text('stripe_checkout_session_id'),
-stripePaymentIntentId: text('stripe_payment_intent_id'),
+// Idempotent settlement fields — contain Dodo's session_id and payment_id.
+dodoCheckoutSessionId: text('dodo_checkout_session_id'),
+dodoPaymentId: text('dodo_payment_id'),
 ```
 
-**No schema migration needed.** The columns are plain `text`, so Dodo's IDs (format `pay_...`, `cs_...`) fit the existing schema without changes.
-
-**Why:** Documents the field semantics without requiring a costly column rename migration. The unique constraint on `stripePaymentIntentId` continues to enforce idempotent settlement regardless of which provider generated the ID.
+**Why:** Schema columns renamed to `dodo_checkout_session_id` and `dodo_payment_id` for clarity. The unique constraint on `dodoPaymentId` continues to enforce idempotent settlement.
 
 ---
 
@@ -453,7 +449,7 @@ The `duplicate_settlement` outcome only occurs when:
 1. A payment settles successfully (bid row inserted)
 2. The handler crashes **after** the INSERT but **before** `markProcessed()`
 3. Webhook redelivery finds `processed_at = NULL` and tries to settle again
-4. The `bids.stripe_payment_intent_id` unique constraint blocks the duplicate INSERT
+4. The `bids.dodo_payment_id` unique constraint blocks the duplicate INSERT
 
 **After (fixed):**
 ```typescript

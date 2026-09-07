@@ -24,7 +24,7 @@ trigger (`bids_append_only`, migration `drizzle/0001_bids_append_only_trigger.sq
   `succeeded → refunded`; anything else (e.g. `failed → succeeded`, `succeeded → pending`)
   raises;
 - auto-stamps `status_updated_at` on every legal transition;
-- leaves Stripe ids (`stripe_checkout_session_id`, `stripe_payment_intent_id`) writable,
+- leaves Dodo ids (`dodo_checkout_session_id`, `dodo_payment_id`) writable,
   since they are lifecycle bookkeeping filled in later, not financial history.
 
 **Why:** The definition-of-done demanded tests proving "bid rows cannot be updated after

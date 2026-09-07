@@ -4,7 +4,7 @@ import { categories } from '../../../db/schema.js';
 
 /**
  * Connectivity probe (ops): proves the serverless runtime can reach Postgres
- * without going through the Stripe-gated checkout path (whose getStripe()
+ * without going through the payment-gated checkout path (whose getDodo()
  * default-param throws before any query runs). Strictly read-only, and it
  * never echoes credentials or raw driver errors — failure detail goes to
  * function logs only, callers get a bare status.

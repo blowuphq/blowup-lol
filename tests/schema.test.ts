@@ -196,7 +196,7 @@ describe('bids are APPEND-ONLY (DB trigger)', () => {
       .update(bids)
       .set({
         paymentStatus: 'succeeded',
-        stripePaymentIntentId: `pi_${uniq()}`,
+        dodoPaymentId: `pay_${uniq()}`,
       })
       .where(eq(bids.id, bid.id));
 
@@ -313,7 +313,7 @@ describe('foreign keys', () => {
 });
 
 describe('idempotency and history anchors', () => {
-  it('webhook_events PK absorbs duplicate Stripe deliveries via ON CONFLICT DO NOTHING', async () => {
+  it('webhook_events PK absorbs duplicate Dodo deliveries via ON CONFLICT DO NOTHING', async () => {
     const eventId = `evt_${uniq()}`;
     const first = await db
       .insert(webhookEvents)

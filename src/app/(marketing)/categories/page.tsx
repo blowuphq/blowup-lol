@@ -127,12 +127,32 @@ export default async function CategoriesPage() {
 
         <footer className="mt-12 flex flex-col items-center gap-2 text-center text-xs uppercase tracking-widest text-zinc-600">
           <span>blowup.lol</span>
-          <Link
-            href="/privacy"
-            className="text-zinc-600 transition-colors hover:text-zinc-400"
-          >
-            Privacy Policy
-          </Link>
+          <nav className="flex items-center gap-3">
+            <Link
+              href="/privacy"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Privacy Policy
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link
+              href="/terms"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Terms of Service
+            </Link>
+            <span aria-hidden="true" className="text-zinc-700">
+              ·
+            </span>
+            <Link
+              href="/refund-policy"
+              className="text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Refund Policy
+            </Link>
+          </nav>
         </footer>
       </div>
     </main>

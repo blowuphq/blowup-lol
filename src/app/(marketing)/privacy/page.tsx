@@ -115,10 +115,10 @@ function ContactBlock() {
       <p className="mt-1">
         Email:{' '}
         <a
-          href="mailto:privacy@blowup.lol"
+          href="mailto:varshith@blowup.lol"
           className="text-hot underline hover:text-hot/80"
         >
-          privacy@blowup.lol
+          varshith@blowup.lol
         </a>
       </p>
       <p className="mt-3 text-xs text-zinc-500">
@@ -738,7 +738,7 @@ export default function PrivacyPage() {
                 information from anyone under 18. If you believe a person
                 under 18 has submitted data through Blowup, please contact us
                 at{' '}
-                <a href="mailto:privacy@blowup.lol">privacy@blowup.lol</a>{' '}
+                <a href="mailto:varshith@blowup.lol">varshith@blowup.lol</a>{' '}
                 and we will delete those records.
               </p>
             </Prose>
@@ -775,7 +775,7 @@ export default function PrivacyPage() {
 
       {/* footer */}
       <footer className="border-t border-white/10 py-8 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
-        blowup.lol · Privacy Policy · Effective {EFFECTIVE_DATE}
+        blowup.lol · <a href="/privacy" className="underline hover:text-zinc-400">Privacy Policy</a> · <a href="/terms" className="underline hover:text-zinc-400">Terms of Service</a> · <a href="/refund-policy" className="underline hover:text-zinc-400">Refund Policy</a> · Effective {EFFECTIVE_DATE}
       </footer>
     </div>
   );

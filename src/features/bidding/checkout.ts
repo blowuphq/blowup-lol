@@ -1,4 +1,3 @@
-import { CUSTOM_BID } from '../../config/site.js';
 import { getActiveSeason } from '../../lib/redis.js';
 import { getDodo } from '../../lib/dodo.js';
 import { assertBidAmount } from './pipeline.js';
@@ -56,6 +55,7 @@ export async function createCheckoutSession(
   }
 
   const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+
   const session = await getDodo().checkoutSessions.create({
     product_cart: [
       {

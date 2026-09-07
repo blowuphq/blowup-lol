@@ -5,7 +5,7 @@ import { assertLocalEnv } from '../../../../lib/env-guard.js';
 /**
  * DEV-ONLY HTTP entrypoint for the fake-bid pipeline — the browser-drivable
  * form of `npm run dev:fake-bid`. Runs the exact same settlement code path
- * as a verified Stripe webhook (PG txn → ZADD → SSE publish), so UI demos
+ * as a verified Dodo Payments webhook (PG txn → ZADD → SSE publish), so UI demos
  * and load tests exercise production behavior.
  *
  * Double-guarded so this can NEVER touch production:

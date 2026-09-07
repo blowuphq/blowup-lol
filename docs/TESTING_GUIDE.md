@@ -407,8 +407,8 @@ http://localhost:3000/boards/tech-youtube
 SELECT * FROM bids ORDER BY created_at DESC LIMIT 1;
 
 -- Expected: payment_status = 'succeeded'
---           stripe_checkout_session_id = 'cs_test_...' (Dodo session ID)
---           stripe_payment_intent_id = 'pay_test_...' (Dodo payment ID)
+--           dodo_checkout_session_id = 'cs_test_...' (Dodo session ID)
+--           dodo_payment_id = 'pay_test_...' (Dodo payment ID)
 
 -- Check webhook event recorded
 SELECT * FROM webhook_events ORDER BY received_at DESC LIMIT 1;
