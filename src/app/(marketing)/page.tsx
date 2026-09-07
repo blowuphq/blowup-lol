@@ -15,17 +15,106 @@ import { CheckoutStatusBanner } from '../../components/shared/CheckoutStatusBann
  * banner (CheckoutStatusBanner). searchParams is accepted per Next.js 16
  * App Router convention so the root page reads ?checkout=success/cancelled
  * from Dodo Payments' redirect-back URLs.
+ *
+ * Phase 5.1: when COMING_SOON_MODE=true, renders a minimal launch page
+ * instead of the full showcase. The proxy (proxy.ts) redirects every other
+ * route here so only /, /privacy, /terms and /refund-policy are reachable.
  */
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = { title: 'Blowup — pick your battle' };
 
+/* ------------------------------------------------------------------ */
+/*  Coming-soon page (COMING_SOON_MODE=true)                          */
+/* ------------------------------------------------------------------ */
+
+function ComingSoonPage() {
+  return (
+    <main className="relative flex min-h-dvh flex-col overflow-x-clip bg-zinc-950 text-zinc-100 selection:bg-hot selection:text-white">
+      {/* heat glow behind the hero */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-72 left-1/2 z-0 h-[34rem] w-[62rem] -translate-x-1/2 rounded-full bg-hot/25 blur-[160px]"
+      />
+
+      {/* Spacer pushes content toward vertical centre without absolute pos */}
+      <div className="flex-1" />
+
+      <section className="relative z-10 flex flex-col items-center gap-6 px-6 text-center">
+        <h1 className="text-[clamp(4rem,14vw,10rem)] font-bold leading-none tracking-tighter">
+          BLOWUP<span className="text-hot">.</span>
+        </h1>
+
+        <p className="text-sm font-bold uppercase tracking-[0.35em] text-hot sm:text-base">
+          Launching soon
+        </p>
+
+        <p className="max-w-md text-balance text-base leading-relaxed text-zinc-400 sm:text-lg">
+          A live discovery marketplace for YouTube creators.
+          <br className="hidden sm:block" />
+          Bid for rank. Compete for attention. Blow up your channel.
+        </p>
+
+        <a
+          href="mailto:varshith@blowup.lol"
+          className="mt-2 inline-flex items-center gap-2 rounded-full border border-hot/40 bg-hot/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-hot transition-colors hover:bg-hot/20"
+        >
+          Get in touch
+        </a>
+      </section>
+
+      {/* Spacer — slightly larger below to feel grounded */}
+      <div className="flex-[1.4]" />
+
+      <footer className="relative z-10 flex flex-col items-center gap-2 px-6 pb-8 text-center text-xs uppercase tracking-widest text-zinc-600">
+        <span>blowup.lol</span>
+        <nav className="flex items-center gap-3">
+          <Link
+            href="/privacy"
+            className="text-zinc-600 transition-colors hover:text-zinc-400"
+          >
+            Privacy Policy
+          </Link>
+          <span aria-hidden="true" className="text-zinc-700">
+            ·
+          </span>
+          <Link
+            href="/terms"
+            className="text-zinc-600 transition-colors hover:text-zinc-400"
+          >
+            Terms of Service
+          </Link>
+          <span aria-hidden="true" className="text-zinc-700">
+            ·
+          </span>
+          <Link
+            href="/refund-policy"
+            className="text-zinc-600 transition-colors hover:text-zinc-400"
+          >
+            Refund Policy
+          </Link>
+        </nav>
+      </footer>
+    </main>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Full landing page (default / COMING_SOON_MODE unset)              */
+/* ------------------------------------------------------------------ */
+
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  /* ── Coming-soon gate ── */
+  if (process.env.COMING_SOON_MODE === 'true') {
+    return <ComingSoonPage />;
+  }
+
+  /* ── Full landing page ── */
   const sp = await searchParams;
   const checkoutStatus = typeof sp.checkout === 'string' ? sp.checkout : undefined;
 
