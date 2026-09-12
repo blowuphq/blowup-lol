@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import Image from 'next/image';
 import Link from 'next/link';
 import { db } from '../../lib/db.js';
 import { categories } from '../../db/schema.js';
@@ -42,7 +43,15 @@ function ComingSoonPage() {
       <div className="flex-1" />
 
       <section className="relative z-10 flex flex-col items-center gap-6 px-6 text-center">
-        <h1 className="text-[clamp(4rem,14vw,10rem)] font-bold leading-none tracking-tighter">
+        <h1 className="flex items-center justify-center gap-1 text-[clamp(4rem,14vw,10rem)] font-bold leading-none tracking-tighter">
+          <Image
+            src="/favicon-512x512-transparent.png"
+            alt=""
+            width={128}
+            height={128}
+            className="mr-[-0.12em] h-[1em] w-[1em] translate-y-[0.12em] object-contain"
+            aria-hidden
+          />
           BLOWUP<span className="text-hot">.</span>
         </h1>
 
@@ -151,8 +160,18 @@ export default async function Home({
       />
 
       <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-10">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          BLOWUP<span className="text-hot">.</span>
+        <Link href="/" className="inline-flex h-6 items-center gap-1 text-lg font-bold tracking-tight">
+          <Image
+            src="/favicon-512x512-transparent.png"
+            alt=""
+            width={32}
+            height={32}
+            className="-mr-1 h-6 w-6 object-contain"
+            aria-hidden
+          />
+          <span className="inline-flex h-6 items-center leading-none">
+            BLOWUP<span className="relative top-px ml-0.5 inline-block text-hot">.</span>
+          </span>
         </Link>
         <span className="inline-flex items-center gap-2 rounded-full border border-hot/40 bg-hot/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-hot">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-hot" />
@@ -162,7 +181,15 @@ export default async function Home({
 
       {/* Hero — wordmark treatment kept from the launch page, deliberately untouched */}
       <section className="relative z-10 flex flex-col items-center gap-5 px-6 pb-4 pt-16 text-center sm:pt-24">
-        <h1 className="text-[clamp(4rem,14vw,10rem)] font-bold leading-none tracking-tighter">
+        <h1 className="flex items-center justify-center gap-1 text-[clamp(4rem,14vw,10rem)] font-bold leading-none tracking-tighter">
+          <Image
+            src="/favicon-512x512-transparent.png"
+            alt=""
+            width={128}
+            height={128}
+            className="mr-[-0.12em] h-[1em] w-[1em] translate-y-[0.12em] object-contain"
+            aria-hidden
+          />
           BLOWUP<span className="text-hot">.</span>
         </h1>
         <p className="text-xs font-bold uppercase tracking-[0.35em] text-hot">

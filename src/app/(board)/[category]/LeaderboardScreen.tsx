@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardRow, BoardSnapshot } from '../../../features/leaderboard/board.js';
@@ -108,8 +109,18 @@ export default function LeaderboardScreen({
       <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6">
         {/* Header */}
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            BLOWUP<span className="text-hot">.</span>
+          <Link href="/" className="inline-flex h-6 items-center gap-1 text-lg font-bold tracking-tight">
+            <Image
+              src="/favicon-512x512-transparent.png"
+              alt=""
+              width={32}
+              height={32}
+              className="-mr-1 h-6 w-6 object-contain"
+              aria-hidden
+            />
+            <span className="inline-flex h-6 items-center leading-none">
+              BLOWUP<span className="relative top-px ml-0.5 inline-block text-hot">.</span>
+            </span>
           </Link>
           <div className="flex items-center gap-2">
             <span

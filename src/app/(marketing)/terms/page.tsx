@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -129,8 +130,18 @@ export default function TermsPage() {
     <div className="min-h-dvh bg-zinc-950 text-zinc-100">
       {/* header */}
       <header className="flex items-center justify-between border-b border-white/10 px-6 py-5 sm:px-10">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          BLOWUP<span className="text-hot">.</span>
+        <Link href="/" className="inline-flex h-6 items-center gap-1 text-lg font-bold tracking-tight">
+          <Image
+            src="/favicon-512x512-transparent.png"
+            alt=""
+            width={32}
+            height={32}
+            className="-mr-1 h-6 w-6 object-contain"
+            aria-hidden
+          />
+          <span className="inline-flex h-6 items-center leading-none">
+            BLOWUP<span className="relative top-px ml-0.5 inline-block text-hot">.</span>
+          </span>
         </Link>
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
           Legal
