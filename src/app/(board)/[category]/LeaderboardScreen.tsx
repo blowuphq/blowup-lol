@@ -16,6 +16,7 @@ import {
 } from '../../../components/shared/CategoryChips.js';
 import { BoardFaq } from '../../../components/shared/BoardFaq.js';
 import { ClaimForm } from '../../../components/shared/ClaimForm.js';
+import { ActivityFeed } from '../../../components/shared/ActivityFeed.js';
 
 /**
  * The live board (architecture §3 Phase C): SSR renders current truth, an
@@ -242,6 +243,11 @@ export default function LeaderboardScreen({
             ]}
           />
         </div>
+
+        {/* Live activity feed (Phase 6) — real-time ticker of recent events */}
+        <section className="mt-8" aria-label="Live activity feed">
+          <ActivityFeed slug={slug} />
+        </section>
 
         <footer className="mt-12 flex items-center justify-between text-xs uppercase tracking-widest text-zinc-600">
           <Link href="/categories" className="transition-colors hover:text-hot">

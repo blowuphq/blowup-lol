@@ -19,8 +19,12 @@ function gradientFor(handle: string): string {
   return GRADIENTS[h % GRADIENTS.length];
 }
 
-export function Avatar({ handle, size = 'md' }: { handle: string; size?: 'md' | 'lg' }) {
-  const dim = size === 'lg' ? 'h-14 w-14 text-xl' : 'h-11 w-11 text-base';
+export function Avatar({ handle, size = 'md' }: { handle: string; size?: 'md' | 'lg' | 'xl' }) {
+  const dim = size === 'xl'
+    ? 'h-20 w-20 text-2xl'
+    : size === 'lg'
+      ? 'h-14 w-14 text-xl'
+      : 'h-11 w-11 text-base';
   return (
     <div
       aria-hidden

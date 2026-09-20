@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
-import { campaigns, creators } from '../../db/schema.js';
-import { publishBoardEvent, type RankDeltaPayload } from '../../lib/sse.js';
+import { campaigns, creators, activities } from '../../db/schema.js';
+import { publishBoardEvent, type RankDeltaPayload, type ActivityFeedPayload } from '../../lib/sse.js';
 import type { SettleResult } from '../bidding/pipeline.js';
 
 /**
@@ -59,5 +59,48 @@ export async function publishSettlement(slug: string, result: SettleResult): Pro
   } catch (err) {
     // Projection-only concern: never surface into the money path.
     console.error(`[sse] publishSettlement failed slug=${slug}:`, err);
+  }
+}
+
+/**
+ * Activity feed publishing (Phase 6): publishes the latest activity entries
+ * for the season so connected clients can render a live "recent activity" ticker.
+ * Called AFTER the settlement transaction commits, same as publishSettlement.
+ * Fail-open: projection failures never block money flow.
+ */
+export async function publishActivityFeed(slug: string, seasonId: string): Promise<void> {
+  try {
+    const feedEntries = await db
+      .select({
+        id: activities.id,
+        type: activities.type,
+        handle: creators.handle,
+        previousRank: activities.previousRank,
+        newRank: activities.newRank,
+        amountCents: activities.amountCents,
+        createdAt: activities.createdAt,
+      })
+      .from(activities)
+      .innerJoin(creators, eq(creators.id, activities.creatorId))
+      .where(and(eq(activities.seasonId, seasonId)))
+      .orderBy(desc(activities.id))
+      .limit(10); // Only need the most recent for the live ticker
+
+    const activityEntries: ActivityFeedPayload['entries'] = feedEntries.map((e) => ({
+      id: e.id,
+      type: e.type as 'bid' | 'rank_change' | 'joined_board',
+      handle: e.handle,
+      previousRank: e.previousRank,
+      newRank: e.newRank,
+      amountCents: e.amountCents,
+      createdAt: e.createdAt.toISOString(),
+    }));
+
+    await publishBoardEvent(slug, {
+      type: 'activity',
+      entries: activityEntries,
+    });
+  } catch (err) {
+    console.error(`[sse] publishActivityFeed failed slug=${slug}:`, err);
   }
 }

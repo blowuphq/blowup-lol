@@ -56,6 +56,9 @@ export async function createCheckoutSession(
 
   const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
 
+  // Cancel URL points to a dedicated cancel page (Phase 4.3)
+  const cancelUrl = `${appUrl}/checkout/cancel`;
+
   const session = await getDodo().checkoutSessions.create({
     product_cart: [
       {
@@ -73,7 +76,8 @@ export async function createCheckoutSession(
       name: input.name?.slice(0, 80) ?? '',
       seasonId: season.id,
     },
-    return_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    return_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: cancelUrl,
     billing_currency: 'USD',
   });
 

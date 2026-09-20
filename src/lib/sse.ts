@@ -60,7 +60,21 @@ export interface VisitorsPayload {
   count: number;
 }
 
-export type BoardEventPayload = RankDeltaPayload | VisitorsPayload;
+/** Activity feed payload — one entry per settled event (bid/rank_change/joined_board). */
+export interface ActivityFeedPayload {
+  type: 'activity';
+  entries: {
+    id: number;
+    type: 'bid' | 'rank_change' | 'joined_board';
+    handle: string;
+    previousRank: number | null;
+    newRank: number | null;
+    amountCents: number | null;
+    createdAt: string; // ISO string for transport
+  }[];
+}
+
+export type BoardEventPayload = RankDeltaPayload | VisitorsPayload | ActivityFeedPayload;
 
 /**
  * Publish one board event AFTER the Postgres commit (ordering invariant §3).

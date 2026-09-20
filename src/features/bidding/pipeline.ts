@@ -5,7 +5,7 @@ import { computeScore, toZsetScore } from '../../lib/rank-formula.js';
 import { getActiveSeason, leaderboardKey, safeZadd } from '../../lib/redis.js';
 import { activities, bids, campaigns, creators } from '../../db/schema.js';
 import { CUSTOM_BID } from '../../config/site.js';
-import { publishSettlement } from '../leaderboard/events.js';
+import { publishSettlement, publishActivityFeed } from '../leaderboard/events.js';
 
 /**
  * The ranking pipeline (architecture §3), driven end-to-end in Phase 2 by a
@@ -287,11 +287,14 @@ export async function recordFakeBid(input: FakeBidInput): Promise<SettleResult &
   assertBidAmount(input.amountCents);
   const { category, season } = await getActiveSeason(input.categorySlug);
 
+  // Normalize handle: always store with @ prefix (matches real YouTube API format).
+  const normalizedHandle = input.handle.startsWith('@') ? input.handle : `@${input.handle}`;
+
   const result = await db.transaction(async (tx) => {
     const creator = await getOrCreateCreator(tx, {
-      youtubeChannelId: `UCFAKE_${input.handle.replace(/^@/, '').toUpperCase()}`,
-      handle: input.handle,
-      name: input.name,
+      youtubeChannelId: `UCFAKE_${normalizedHandle.replace(/^@/, '').toUpperCase()}`,
+      handle: normalizedHandle,
+      name: input.name ?? normalizedHandle,
       categoryId: category.id,
     });
     const campaign = await getOrCreateCampaign(tx, {
@@ -314,6 +317,8 @@ export async function recordFakeBid(input: FakeBidInput): Promise<SettleResult &
   await safeZadd(leaderboardKey(category.slug, season.id), result.zsetScore, result.creatorId);
   // SSE fan-out (§3.B10) — same publish path the real webhook uses.
   await publishSettlement(category.slug, result);
+  // Activity feed (Phase 6) — live ticker of recent events
+  await publishActivityFeed(category.slug, season.id);
 
   return { ...result, slug: category.slug };
 }
