@@ -36,6 +36,6 @@ export function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon-512x512-transparent\\.png|favicon-512x512\\.png|favicon-48x48\\.png|favicon-32x32\\.png|favicon-16x16\\.png|blowup_logo_main\\.png|sitemap\\.xml|robots\\.txt).*)',
   ],
 };
