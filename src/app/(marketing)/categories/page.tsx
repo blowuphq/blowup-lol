@@ -59,10 +59,10 @@ export default async function CategoriesPage() {
 
         <section className="mt-10">
           <h1 className="text-[clamp(2.5rem,7vw,4.25rem)] font-bold uppercase leading-none tracking-tighter">
-            Pick your <span className="text-hot">battle</span>
+            Pick your <span className="text-hot">board</span>
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Weekly seasons. One board per category. Highest score wins the spotlight.
+            Weekly seasons. One leaderboard per category. Highest score leads.
           </p>
           {/* Chip scan (Phase 4.5, item 5): activity level per category at a glance */}
           <div className="mt-5">

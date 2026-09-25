@@ -18,7 +18,7 @@ import { BID_TIERS_CENTS } from '../../config/site.js';
  * clicks too, so any fixed price would be a guess.
  */
 
-export function BoostTrigger({
+export function PromoteTrigger({
   handle,
   onOpen,
 }: {
@@ -29,15 +29,15 @@ export function BoostTrigger({
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Boost ${handle}`}
+      aria-label={`Promote ${handle}`}
       className="shrink-0 cursor-pointer rounded-lg border border-hot/50 bg-hot/15 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-hot transition-colors hover:bg-hot/25 hover:text-white sm:px-4 sm:text-sm"
     >
-      Boost
+      Promote
     </button>
   );
 }
 
-export function BoostPicker({
+export function PromotePicker({
   slug,
   handle,
   onClose,
@@ -49,7 +49,7 @@ export function BoostPicker({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function boost(amountCents: number): Promise<void> {
+  async function promote(amountCents: number): Promise<void> {
     setBusy(true);
     setError(null);
     try {
@@ -76,14 +76,14 @@ export function BoostPicker({
     <div className="border-t border-white/5 px-4 py-3 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-          Boost {handle}
+          Promote {handle}
         </span>
         {BID_TIERS_CENTS.map((cents) => (
           <button
             key={cents}
             type="button"
             disabled={busy}
-            onClick={() => void boost(cents)}
+            onClick={() => void promote(cents)}
             className="cursor-pointer rounded-lg border border-hot/40 bg-hot/10 px-3 py-1.5 text-sm font-bold tabular-nums text-hot transition-colors hover:bg-hot hover:text-white disabled:cursor-wait disabled:opacity-50"
           >
             ${(cents / 100).toLocaleString('en-US')}

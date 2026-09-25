@@ -148,7 +148,7 @@ export default function LeaderboardScreen({
         {/* Title */}
         <section className="mt-10">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-hot">
-            Weekly battlefield
+            Weekly leaderboard
           </p>
           <h1 className="mt-1 text-[clamp(2.75rem,8vw,5rem)] font-bold uppercase leading-none tracking-tighter">
             {initial.categoryName}
