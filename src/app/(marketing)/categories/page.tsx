@@ -109,7 +109,7 @@ export default async function CategoriesPage() {
                   {/* #1 preview */}
                   <div className="shrink-0 text-right">
                     <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-hot">
-                      Reigning #1
+                      Current #1
                     </p>
                     {leader ? (
                       <div className="mt-2 flex items-center justify-end gap-3">

@@ -259,14 +259,14 @@ export default async function Home({
           </div>
         )}
 
-        {/* Reigning #1 preview — same rows[0] derivation /categories renders,
+        {/* Current leaders preview — same rows[0] derivation /categories renders,
             so the two pages can never disagree */}
         <section aria-label="Current leaders">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-hot">
             Happening now
           </p>
           <h2 className="mt-1 text-2xl font-bold uppercase tracking-tighter sm:text-3xl">
-            Every crown is in play
+            Creators getting attention now
           </h2>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {cats.map((cat, i) => {
@@ -281,7 +281,7 @@ export default async function Home({
                     {cat.name}
                   </h3>
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.25em] text-hot">
-                    Reigning #1
+                    Current #1
                   </p>
                   {leader ? (
                     <div className="mt-2 flex items-center gap-3">
@@ -336,9 +336,9 @@ export default async function Home({
           <ol className="mt-6 grid gap-6 md:grid-cols-3">
             <li>
               <p className="font-mono text-sm font-bold text-hot">01</p>
-              <h3 className="mt-1 font-bold uppercase tracking-tight">Bid for placement</h3>
+              <h3 className="mt-1 font-bold uppercase tracking-tight">Promote your creator</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Real bids move your rank. Outbid a rival and the board updates
+                Settled promotions increase your score, and the leaderboard updates
                 the moment payment settles.
               </p>
             </li>
@@ -346,15 +346,15 @@ export default async function Home({
               <p className="font-mono text-sm font-bold text-hot">02</p>
               <h3 className="mt-1 font-bold uppercase tracking-tight">Watch it move live</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Every boost lands on the public board in real time — no refresh,
-                no waiting. Open a second tab and watch yourself climb.
+                Every promotion update appears on the public leaderboard in real time —
+                no refresh, no waiting. Open a second tab and watch your placement change.
               </p>
             </li>
             <li>
               <p className="font-mono text-sm font-bold text-hot">03</p>
               <h3 className="mt-1 font-bold uppercase tracking-tight">Lead when the week ends</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Score blends bid money and clicks — 85/15. Finish #1 this season
+                Score blends bid amount and engagement. Finish #1 this season
                 and the spotlight is yours.
               </p>
             </li>

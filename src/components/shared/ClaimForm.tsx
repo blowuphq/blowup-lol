@@ -154,12 +154,12 @@ export function ClaimForm({
             <span className="font-bold tabular-nums text-hot">
               ${(leader.bidTotalCents / 100).toLocaleString('en-US')}
             </span>
-            {' — outbid to lead.'}
+            {'. Increase your promotion to improve your placement.'}
           </>
         ) : (
           <>
             <span className="font-bold text-zinc-200">No bids yet</span>
-            {' — the first successful bid takes #1.'}
+            {' — the first successful promotion takes #1.'}
           </>
         )}
       </p>

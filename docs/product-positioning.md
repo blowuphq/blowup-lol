@@ -1,12 +1,20 @@
-# Blowup.io — Product Positioning Reset
+# Blowup.io — Product Positioning
 
-**Status: DRAFT — ready for owner review**
+**Status: APPROVED PRODUCT POSITIONING — September 2026**
 
-## 1. New Positioning Statement
+---
 
-**Blowup is a live creator promotion and discovery marketplace for YouTube creators.**
+## 1. Product Definition
 
-Creators bid for placement on weekly leaderboards in category-specific boards (Tech, Gaming, Education). Higher bids yield higher visibility. Viewers discover trending creators in real time. The platform is transparent, deterministic, and built for micro-to-mid-tier creators (2K–100K subs) who want paid promotion that actually moves the needle.
+**Blowup is a live creator promotion and discovery marketplace.**
+
+### Current MVP (September 2026)
+
+YouTube-first. Creators promote their YouTube presence through transparent category rankings. Weekly seasons reset every week; the leaderboard updates in real time as settled promotions land.
+
+### Long-Term Direction
+
+Creator-platform agnostic. Blowup may later support creator identities/content from additional platforms, but unsupported integrations must never be presented as currently available. Do not claim Instagram, TikTok, X, Twitch, or other platforms are supported today.
 
 ---
 
@@ -18,10 +26,10 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 | "Enter the arena" | "Join the board" / "Start promoting" | Primary CTA |
 | "Weekly battlefield" | "Weekly leaderboard" / "This week's board" | |
 | "Reigning #1" / "Current #1" | "Top creator" / "Leading now" / "#1 this week" | |
-| "Every crown is in play" | "Every spot is up for grabs" / "Any creator can lead" | |
+| "Every crown is in play" | "Creators getting attention now" / "Every spot is up for grabs" | |
 | "Three moves to the top" | "Three steps to visibility" | |
 | "Bid for rank" | "Bid for placement" / "Bid for visibility" | |
-| "Outbid them to take the top" | "Outbid to lead" / "Outbid for the top spot" | |
+| "Outbid them to take the top" | "Increase your promotion to improve your placement" | |
 | "Win the round" | "Lead when the week ends" / "Finish #1 this season" | |
 | "Boost" (button label) | "Promote" | Primary action verb |
 | "Boost {handle}" | "Promote {handle}" | |
@@ -29,8 +37,8 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 | "Boost again to answer back" | "Promote again to reclaim your spot" | |
 | "Boards reshuffle" | "Rankings update live" | |
 | "Wherever you stand when the round ends" | "Your final rank when the season closes" | |
-| "Blown out" / "Knocked out" | "Displaced" / "Moved down" | |
-| "Reclaim #N" | "Reclaim the top spot" / "Move back up" | |
+| "Blown out" / "Knocked out" | "Moved down" / "Placement changed" | Future Phase 6 copy |
+| "Reclaim #N" | "Move back up" / "Return to the Top 3" | Future Phase 6 copy |
 | "Live activity" | "Live updates" / "Recent promotions" | |
 | "Joined the board" | "Started promoting" / "Joined the leaderboard" | |
 | "Placed a bid" | "Promoted with $X" | |
@@ -42,9 +50,9 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 
 - **Direct, not aggressive.** No combat metaphors. Creators *promote*, they don't fight.
 - **Builder-friendly.** Language reflects that creators are building channels, not battling.
-- **Transparent.** The mechanics (bidding, ranking, clicks) are explained plainly — same as before.
+- **Transparent.** The mechanics (bidding, ranking, engagement) are explained plainly.
 - **Momentum-oriented.** "Live," "real-time," "this week," "right now" — emphasize freshness.
-- **Micro-creator inclusive.** "$5 to start," "no minimum following," "weekly fresh start."
+- **Micro-creator accessible.** "$5 to start," "no minimum following," "weekly fresh start."
 
 ---
 
@@ -55,9 +63,18 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 2. **Secondary:** "Bid for placement. Get discovered. Grow your channel."
 3. **Tertiary:** "Weekly leaderboards. Transparent ranking. Pay for visibility that works."
 
-### Value Props
-- **For creators:** "Pay only for placement. Every dollar moves your rank. Clicks from real viewers count too (15% of score). Seasons reset weekly — fresh start every Monday."
-- **For viewers:** "See who's trending right now. Discover creators investing in their growth. Click through to subscribe."
+### Creator Value (Current)
+- "Promote your channel through transparent category rankings and gain visibility on Blowup."
+- "Settled promotion spend contributes to your score and can improve your placement."
+- "Seasons reset weekly — fresh start every week."
+
+### Visitor Value (Current)
+- "Discover creators gaining attention across live category rankings."
+
+### Future Visitor Value (Phase 6+)
+- "Click through to subscribe. Clicks from real viewers count toward rank (15% of score)."
+
+*Measurable outbound traffic becomes a stronger value proposition once Phase 6 click tracking is repaired and shipped.*
 
 ---
 
@@ -76,8 +93,6 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 - `src/components/shared/BidButton.tsx` — Inline promote button + picker
 - `src/components/shared/LeaderboardRow.tsx` — Row rendering + delta badges
 - `src/components/shared/ScoreFormula.tsx` — Formula panel (keep technical accuracy)
-- `src/components/shared/ActivityFeed.tsx` — Activity ticker
-- `src/components/shared/BlownOutBanner.tsx` — Displacement notification
 
 ### Config (Terminology Constants)
 - `src/config/site.ts` — Consider adding `ACTION_VERB = 'Promote'` for consistency
@@ -89,7 +104,27 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 
 ---
 
-## 6. Visual Identity — UNCHANGED
+## 6. Future Feature Copy (Must Follow This Positioning)
+
+The following Phase 6 components are NOT on the clean `main` branch and are intentionally excluded from this positioning branch. Their copy, when implemented, must follow this document:
+
+- `src/components/shared/ActivityFeed.tsx` → should use "Live updates" / promotion language
+- `src/components/shared/BlownOutBanner.tsx` → should use "Your placement changed", not combat language
+
+### Future Phase 6 Direction (not implemented)
+
+**Blown-out experience (placeholder for future implementation):**
+> Your placement changed.
+>
+> Your profile moved from #3 to #4 in Tech.
+>
+> Your promotion is still live.
+>
+> Increase your promotion to move back into the Top 3.
+
+---
+
+## 7. Visual Identity — UNCHANGED
 
 - Color palette (zinc-950 bg, hot accent #FF4017, emerald/cyan/amber for semantic states)
 - Typography (system font, clamp() hero sizing, uppercase tracking-heavy labels)
@@ -99,9 +134,9 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 
 ---
 
-## 7. Scope Boundary
+## 8. Scope Boundary
 
-**IN SCOPE:** All user-facing copy in frontend components and pages listed above.
+**IN SCOPE:** All user-facing copy in frontend components and pages listed in §5.
 
 **OUT OF SCOPE:**
 - Backend logic, API routes, database schema, scoring formula
@@ -110,24 +145,24 @@ Creators bid for placement on weekly leaderboards in category-specific boards (T
 - Legal page content (privacy, terms, refund policy)
 - Environment variables, deployment config, CI/CD
 - Test files (update only if assertions reference old copy)
-- Documentation files other than this one and progress.md
+- Documentation files other than this one
+- Phase 6 components (ActivityFeed, BlownOutBanner, creator profile page, click tracking, share card, checkout pages)
 
 ---
 
-## 8. Acceptance Criteria
+## 9. Acceptance Criteria
 
 1. Zero occurrences of battle/arena/crown/fight/warrior/champion/victor/defeat/conquer language in user-facing frontend copy (excluding legal pages and code comments).
-2. "Boost" → "Promote" on all buttons and in all tooltips/labels.
-3. "Enter the arena" → "Join the board" / "Start promoting" on all CTAs.
-4. "Pick your battle" → "Pick your board" / "Choose your category".
-5. "Reigning #1" → "Top creator" / "Leading now" / "#1 this week".
-6. "Blown out" → "Displaced" in BlownOutBanner.
-7. Visual identity 100% preserved — no CSS/design changes.
-8. All existing tests pass (terminology in test assertions may need updates).
-9. Build succeeds (`npm run build`).
+2. "Promote" used on all buttons and in all tooltips/labels (not "Boost").
+3. "Join the board" / "Start promoting" on all CTAs (not "Enter the arena").
+4. "Pick your board" / "Choose your category" (not "Pick your battle").
+5. "Current #1" / "Top creator" / "Leading now" (not "Reigning #1").
+6. Visual identity 100% preserved — no CSS/design changes.
+7. All existing tests pass (terminology in test assertions may need updates).
+8. Build succeeds (`npm run build`).
 
 ---
 
-## 9. Rollback Plan
+## 10. Rollback Plan
 
-If owner rejects: `git checkout main` — all changes are on `product-positioning-reset` branch only.
+If owner rejects: `git checkout main` — all changes are on `product-positioning-reset-clean` branch only.
