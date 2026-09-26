@@ -141,7 +141,7 @@ export function ClaimForm({
       <h2 className="mt-1 text-xl font-bold uppercase tracking-tighter sm:text-2xl">
         {isLocked && selectedCat
           ? `Join the ${selectedCat.name} board`
-          : 'Enter the arena'}
+          : 'Start promoting'}
       </h2>
 
       {/* Live price context */}
@@ -154,12 +154,12 @@ export function ClaimForm({
             <span className="font-bold tabular-nums text-hot">
               ${(leader.bidTotalCents / 100).toLocaleString('en-US')}
             </span>
-            {' — outbid them to take the top.'}
+            {'. Increase your promotion to improve your placement.'}
           </>
         ) : (
           <>
             <span className="font-bold text-zinc-200">No bids yet</span>
-            {' — the first successful bid claims #1.'}
+            {' — the first successful promotion takes #1.'}
           </>
         )}
       </p>

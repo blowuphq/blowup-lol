@@ -24,7 +24,7 @@ import { CheckoutStatusBanner } from '../../components/shared/CheckoutStatusBann
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Blowup — pick your battle' };
+export const metadata = { title: 'Blowup — live creator promotion' };
 
 /* ------------------------------------------------------------------ */
 /*  Coming-soon page (COMING_SOON_MODE=true)                          */
@@ -62,7 +62,7 @@ function ComingSoonPage() {
         <p className="max-w-md text-balance text-base leading-relaxed text-zinc-400 sm:text-lg">
           A live discovery marketplace for YouTube creators.
           <br className="hidden sm:block" />
-          Bid for rank. Compete for attention. Blow up your channel.
+          Bid for placement. Get discovered. Grow your channel.
         </p>
 
         <a
@@ -193,17 +193,17 @@ export default async function Home({
           BLOWUP<span className="text-hot">.</span>
         </h1>
         <p className="text-xs font-bold uppercase tracking-[0.35em] text-hot">
-          Pick your battle
+          Pick your board
         </p>
         <p className="max-w-xl text-balance text-base leading-relaxed text-zinc-400 sm:text-lg">
           A live discovery marketplace for YouTube creators. Bid for placement,
-          compete for attention, blow up your channel.
+          get discovered, grow your channel.
         </p>
         <Link
           href="/categories"
           className="group mt-2 inline-flex items-center gap-2 rounded-full bg-hot px-7 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-hot/25 transition-colors hover:bg-hot/90"
         >
-          Enter the arena
+          Join the board
           <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
             →
           </span>
@@ -259,14 +259,14 @@ export default async function Home({
           </div>
         )}
 
-        {/* Reigning #1 preview — same rows[0] derivation /categories renders,
+        {/* Current leaders preview — same rows[0] derivation /categories renders,
             so the two pages can never disagree */}
         <section aria-label="Current leaders">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-hot">
             Happening now
           </p>
           <h2 className="mt-1 text-2xl font-bold uppercase tracking-tighter sm:text-3xl">
-            Every crown is in play
+            Creators getting attention now
           </h2>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {cats.map((cat, i) => {
@@ -281,7 +281,7 @@ export default async function Home({
                     {cat.name}
                   </h3>
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.25em] text-hot">
-                    Reigning #1
+                    Current #1
                   </p>
                   {leader ? (
                     <div className="mt-2 flex items-center gap-3">
@@ -331,14 +331,14 @@ export default async function Home({
             How it works
           </p>
           <h2 className="mt-1 text-2xl font-bold uppercase tracking-tighter sm:text-3xl">
-            Three moves to the top
+            Three steps to visibility
           </h2>
           <ol className="mt-6 grid gap-6 md:grid-cols-3">
             <li>
               <p className="font-mono text-sm font-bold text-hot">01</p>
-              <h3 className="mt-1 font-bold uppercase tracking-tight">Bid for rank</h3>
+              <h3 className="mt-1 font-bold uppercase tracking-tight">Promote your creator</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Real bids move the score. Outbid a rival and the board reorders
+                Settled promotions increase your score, and the leaderboard updates
                 the moment payment settles.
               </p>
             </li>
@@ -346,16 +346,16 @@ export default async function Home({
               <p className="font-mono text-sm font-bold text-hot">02</p>
               <h3 className="mt-1 font-bold uppercase tracking-tight">Watch it move live</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Every boost lands on the public board in real time — no refresh,
-                no waiting. Open a second tab and watch yourself climb.
+                Every promotion update appears on the public leaderboard in real time —
+                no refresh, no waiting. Open a second tab and watch your placement change.
               </p>
             </li>
             <li>
               <p className="font-mono text-sm font-bold text-hot">03</p>
-              <h3 className="mt-1 font-bold uppercase tracking-tight">Win the round</h3>
+              <h3 className="mt-1 font-bold uppercase tracking-tight">Lead when the week ends</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                Score blends bid money and clicks — 85/15. Hold #1 when the round
-                ends and the spotlight is yours.
+                Score blends bid amount and engagement. Finish #1 this season
+                and the spotlight is yours.
               </p>
             </li>
           </ol>
@@ -367,14 +367,14 @@ export default async function Home({
             The boards are open<span className="text-hot">.</span>
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-zinc-400">
-            Seasons are running right now. Pick a category and watch real money
-            fight for the top spot.
+            Seasons are running right now. Pick a category and watch real bids
+            move the leaderboard live.
           </p>
           <Link
             href="/categories"
             className="group mt-6 inline-flex items-center gap-2 rounded-full bg-hot px-7 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-hot/25 transition-colors hover:bg-hot/90"
           >
-            Enter the arena
+            Join the board
             <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
               →
             </span>

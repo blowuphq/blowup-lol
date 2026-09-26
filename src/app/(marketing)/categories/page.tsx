@@ -59,10 +59,10 @@ export default async function CategoriesPage() {
 
         <section className="mt-10">
           <h1 className="text-[clamp(2.5rem,7vw,4.25rem)] font-bold uppercase leading-none tracking-tighter">
-            Pick your <span className="text-hot">battle</span>
+            Pick your <span className="text-hot">board</span>
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Weekly seasons. One board per category. Highest score wins the spotlight.
+            Weekly seasons. One leaderboard per category. Highest score leads.
           </p>
           {/* Chip scan (Phase 4.5, item 5): activity level per category at a glance */}
           <div className="mt-5">
@@ -88,7 +88,7 @@ export default async function CategoriesPage() {
                       {cat.name}
                     </h2>
                     <p className="mt-2 text-xs uppercase tracking-widest text-zinc-500">
-                      Round ends{' '}
+                      Season ends{' '}
                       {new Date(boards[i].seasonEndsAt).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
@@ -109,7 +109,7 @@ export default async function CategoriesPage() {
                   {/* #1 preview */}
                   <div className="shrink-0 text-right">
                     <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-hot">
-                      Reigning #1
+                      Current #1
                     </p>
                     {leader ? (
                       <div className="mt-2 flex items-center justify-end gap-3">

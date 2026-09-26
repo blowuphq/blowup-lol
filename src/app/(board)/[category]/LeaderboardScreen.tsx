@@ -148,7 +148,7 @@ export default function LeaderboardScreen({
         {/* Title */}
         <section className="mt-10">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-hot">
-            Weekly battlefield
+            Weekly leaderboard
           </p>
           <h1 className="mt-1 text-[clamp(2.75rem,8vw,5rem)] font-bold uppercase leading-none tracking-tighter">
             {initial.categoryName}
@@ -165,7 +165,7 @@ export default function LeaderboardScreen({
               raised this season
             </span>
             <span aria-hidden>·</span>
-            <span>Round ends {fmtEnd(initial.seasonEndsAt)} · UTC</span>
+            <span>Season ends {fmtEnd(initial.seasonEndsAt)} · UTC</span>
           </div>
           {initial.source === 'postgres' && (
             <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-300">

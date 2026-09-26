@@ -6,19 +6,19 @@
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'How do I take #1?',
-    a: 'Hit Boost on your creator and out-raise whoever sits above. Every dollar lifts their score — and because the curve is logarithmic, close boards flip fast. The new order is live on every screen within a second.',
+    a: 'Promote your creator and out-raise whoever sits above. Every dollar lifts your score — and because the curve is logarithmic, close boards flip fast. The new order is live on every screen within a second.',
   },
   {
     q: 'What happens when someone outbids me?',
-    a: 'Your creator slides down a spot instantly — and your money stays counted for the whole season. Nothing expires mid-round. Boost again to answer back.',
+    a: 'Your creator slides down a spot instantly — and your money stays counted for the whole season. Nothing expires mid-week. Promote again to reclaim your spot.',
   },
   {
     q: 'Does my rank ever come back?',
-    a: 'Always. Boards reshuffle the second a bid settles, as many times as it takes. Wherever you stand when the round ends is what freezes into the final standings.',
+    a: 'Always. Rankings update live the second a bid settles, as many times as it takes. Your final rank when the season closes is what freezes into the standings.',
   },
   {
     q: 'Is this real money?',
-    a: 'Yes. Boosts run through Dodo Payments’ secure checkout, and only settled payments move ranks — no phantom bids.',
+    a: "Yes. Promotions run through Dodo Payments' secure checkout, and only settled payments move ranks — no phantom bids.",
   },
 ];
 

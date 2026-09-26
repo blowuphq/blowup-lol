@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { BoardRow } from '../../features/leaderboard/board.js';
-import { BoostPicker, BoostTrigger } from './BidButton.js';
+import { PromotePicker, PromoteTrigger } from './BidButton.js';
 import { Avatar } from './Avatar.js';
 
 // Re-exported so existing importers (categories index, root page) keep their
@@ -21,7 +21,7 @@ export { Avatar };
  * medal-tinted gradient) while staying in the SAME layout parent — the
  * size/styling delta is class-conditional, so a row sliding between #3 and
  * #4 still animates smoothly instead of jumping between containers.
- * Every row carries an inline Boost CTA into the existing checkout flow.
+ * Every row carries an inline Promote CTA into the existing checkout flow.
  */
 
 function DeltaBadge({ row }: { row: BoardRow }) {
@@ -72,7 +72,7 @@ export function LeaderboardRow({
   slug: string;
   flashSeq?: number;
 }) {
-  const [boostOpen, setBoostOpen] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
   const podium = row.rank <= 3;
   const money = `$${(row.bidTotalCents / 100).toLocaleString('en-US')}`;
   return (
@@ -139,13 +139,13 @@ export function LeaderboardRow({
           </div>
           <div className="mt-1 text-[10px] uppercase tracking-widest text-zinc-600">score</div>
         </div>
-        <BoostTrigger handle={row.handle} onOpen={() => setBoostOpen(true)} />
+        <PromoteTrigger handle={row.handle} onOpen={() => setPromoteOpen(true)} />
       </div>
-      {boostOpen && (
-        <BoostPicker
+      {promoteOpen && (
+        <PromotePicker
           slug={slug}
           handle={row.handle}
-          onClose={() => setBoostOpen(false)}
+          onClose={() => setPromoteOpen(false)}
         />
       )}
     </motion.div>
