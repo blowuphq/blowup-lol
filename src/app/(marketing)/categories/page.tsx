@@ -88,7 +88,7 @@ export default async function CategoriesPage() {
                       {cat.name}
                     </h2>
                     <p className="mt-2 text-xs uppercase tracking-widest text-zinc-500">
-                      Round ends{' '}
+                      Season ends{' '}
                       {new Date(boards[i].seasonEndsAt).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',

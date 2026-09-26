@@ -165,7 +165,7 @@ export default function LeaderboardScreen({
               raised this season
             </span>
             <span aria-hidden>·</span>
-            <span>Round ends {fmtEnd(initial.seasonEndsAt)} · UTC</span>
+            <span>Season ends {fmtEnd(initial.seasonEndsAt)} · UTC</span>
           </div>
           {initial.source === 'postgres' && (
             <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-300">
